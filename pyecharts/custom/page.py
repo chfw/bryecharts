@@ -1,11 +1,8 @@
 #!/usr/bin/env python
 # coding=utf-8
 
-from pyecharts import template
-from pyecharts import utils
 import pyecharts.constants as constants
 from pyecharts.template import (
-    produce_require_configuration,
     produce_html_script_list)
 
 
@@ -42,27 +39,7 @@ class Page(object):
         :param path:
         :return:
         """
-        template_name = "multicharts.html"
-        chart_content = self.render_embed()
-        dependencies = self._merge_dependencies()
-        script_list = produce_html_script_list(dependencies)
-        tmp = template.JINJA2_ENV.get_template(template_name)
-        html = tmp.render(multi_chart_content=chart_content,
-                          page_title=self._page_title,
-                          script_list=script_list)
-        html = utils.freeze_js(html)
-        utils.write_utf8_html_file(path, html)
-
-    def render_embed(self):
-        """
-        Produce rendered charts in html for embedding purpose
-
-        :return:
-        """
-        chart_content = ""
-        for chart in self.__charts:
-            chart_content += chart.render_embed()
-        return chart_content
+        raise Exception("Not Implemented")
 
     def get_js_dependencies(self):
         """
@@ -70,26 +47,6 @@ class Page(object):
         """
         unordered_js_dependencies = self._merge_dependencies()
         return produce_html_script_list(unordered_js_dependencies)
-
-    def _repr_html_(self):
-        """
-
-        :return:
-        """
-        _tmp = "notebook.html"
-        doms = ""
-        components = ""
-        dependencies = self._merge_dependencies()
-        for chart in self.__charts:
-            doms += chart._render_notebook_dom_()
-            components += chart._render_notebook_component_()
-
-        require_config = produce_require_configuration(
-            dependencies, self._jshost)
-        tmp = template.JINJA2_ENV.get_template(_tmp)
-        html = tmp.render(
-            single_chart=components, dom=doms, **require_config)
-        return html
 
     def _merge_dependencies(self):
         dependencies = set()

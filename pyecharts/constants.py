@@ -2,28 +2,31 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
-import os
+from browser import ajax
 import json
-import codecs
-
-from pyecharts.utils import get_resource_dir
 
 
 DEFAULT_HOST = 'https://chfw.github.io/jupyter-echarts/echarts'
 
 CONFIGURATION = dict(
-    HOST='/nbextensions/echarts'
+    HOST=DEFAULT_HOST
 )
 
-DEFAULT_ECHARTS_REGISTRY = os.path.join(
-    get_resource_dir('templates'), 'js', 'echarts', 'registry.json')
+DEFAULT_ECHARTS_REGISTRY = DEFAULT_HOST+'/registry.json'
+DEFAULT_JS_LIBRARIES = {}
+CITY_NAME_PINYIN_MAP = {}
 
-with codecs.open(DEFAULT_ECHARTS_REGISTRY, 'r', 'utf-8') as f:
-    content = f.read()
-    CONFIG = json.loads(content)
 
-DEFAULT_JS_LIBRARIES = CONFIG['FILE_MAP']
-CITY_NAME_PINYIN_MAP = CONFIG['PINYIN_MAP']
+def on_complete(response):
+    CONFIG = json.loads(response.text)
+    DEFAULT_JS_LIBRARIES.update(CONFIG['FILE_MAP'])
+    CITY_NAME_PINYIN_MAP.update(CONFIG['PINYIN_MAP'])
+
+
+request = ajax.ajax()
+request.bind('complete', on_complete)
+request.open('GET', DEFAULT_ECHARTS_REGISTRY, False)
+request.send()
 
 PAGE_TITLE = "Echarts"
 

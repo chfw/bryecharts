@@ -2,17 +2,8 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
-from jinja2 import Environment, FileSystemLoader
 import pyecharts.constants as constants
 from pyecharts.utils import get_resource_dir
-
-
-# Single Singleton Instance for jinja2
-JINJA2_ENV = Environment(
-    loader=FileSystemLoader(get_resource_dir('templates')),
-    keep_trailing_newline=True,
-    trim_blocks=True,
-    lstrip_blocks=True)
 
 
 def produce_require_configuration(dependencies, jshost):

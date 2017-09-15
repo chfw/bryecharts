@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # coding=utf-8
 
-from PIL import Image
-
 from pyecharts.base import Base
 from pyecharts.option import get_all_options
 
@@ -67,15 +65,5 @@ class Scatter(Base):
             select a color to exclude, (225, 225, 225) means Keep only white pixel information.
         :return:
         """
-        color = color or (255, 255, 255)
-        im = Image.open(path)
-        width, height = im.size
-        imarray = im.load()
-        # flip vertical Images
-        for x in range(width):
-            for y in range(height):
-                if y < int(height / 2):
-                    imarray[x, y], imarray[x, height-y-1] = imarray[x, height-y-1], imarray[x, y]
-        # [:3] is r,g,b
-        result = [(x, y) for x in range(width) for y in range(height) if imarray[x, y][:3] != color]
-        return self.cast(result)
+        raise Exception("Not implemented")
+
