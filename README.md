@@ -1,12 +1,17 @@
 # bryecharts
 
-bryecharts is a port of pyecharts to generate charts using Echarts in Browser.
+bryecharts is a [Brython](https://github.com/brython-dev/brython) port of pyecharts to generate echarts directly in modern browsers.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+## Usage
 
-![Preview](https://github.com/chfw/bryecharts/raw/master/demo.gif)
+1. Visit https://chfw.github.io/bryecharts/
+1. Paste your [sample codes](https://github.com/chenjiandongx/pyecharts/blob/master/docs/zh-cn/documentation.md) into the editor or write your own code from scratch
+1. Press 'Run'
 
-Please star/watch this project if you are interested :fire:.
+## Baselines
+
+1. pyecharts v0.2.4
+1. Brython 3.3.2 (Python 3 variant)
 
 ## License
 
