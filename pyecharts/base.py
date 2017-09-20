@@ -6,8 +6,8 @@ import uuid
 import random
 import datetime
 from pprint import pprint
-from browser import window, load
-from javascript import JSConstructor
+from browser import window, load, doc
+
 
 from pyecharts.option import get_all_options
 from pyecharts import template
@@ -385,10 +385,8 @@ class Base(object):
 
     def render(self, _=None):
         for js_url in self.get_js_dependencies():
-            print(js_url)
             load(constants.DEFAULT_HOST + '/' + js_url + ".js")
-        mychart = JSConstructor(window.achart)
-        myechart = mychart()
+        myechart = window.echarts.init(doc['me'])
         myechart.setOption(self.options)
 
 
