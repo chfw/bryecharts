@@ -8,7 +8,6 @@ $(document).ready(function () {
 			applyDefaultStyles: false,
 			size: 300,
 			onresize_end: function(){
-				console.log('xxxx');
 			}
 		}
 	});
