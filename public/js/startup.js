@@ -1,6 +1,6 @@
 var myLayout;
 $(document).ready(function () {
-	brython();
+	brython({"pythonpath": ['/bryecharts/', '/']});
 	
     myLayout = $('body').layout({
 		applyDefaultStyles: true,
