@@ -1,0 +1,26 @@
+#editor { 
+	height:100%;
+	width:100%;
+	margin: 0 0 0 0;
+}
+#control {
+	position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+#drawme {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+}
+
+.custom-north {
+	padding: 0 !important;
+}
+
+.custom-center {
+	border: none !important;
+}

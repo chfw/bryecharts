@@ -1,0 +1,33 @@
+<html>
+<head>
+  <script src="brython.js"></script>
+  <script src="https://chfw.github.io/jupyter-echarts/echarts/echarts.min.js"></script>
+  <script type="text/javascript" src="brython_stdlib.js"></script>
+</head>
+<body onload="brython()">
+  <div id='me' style="width:1300px;height:620px;"></div>
+
+  <script type="text/javascript">
+	function achart(){
+	return echarts.init(document.getElementById('me'));
+	}
+  </script>
+<script type="text/python">
+from browser import alert, document, window
+from pyecharts import Bar
+from javascript import JSConstructor
+
+
+attr = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+v1 = [2.0, 4.9, 7.0, 23.2, 25.6, 76.7, 135.6, 162.2, 32.6, 20.0, 6.4, 3.3]
+v2 = [2.6, 5.9, 9.0, 26.4, 28.7, 70.7, 175.6, 182.2, 48.7, 18.8, 6.0, 2.3]
+bar = Bar("Bar chart", "precipitation and evaporation one year")
+bar.add("precipitation", attr, v1, mark_line=["average"], mark_point=["max", "min"])
+bar.add("evaporation", attr, v2, mark_line=["average"], mark_point=["max", "min"])
+mychart = JSConstructor(window.achart)
+myechart = mychart()
+myechart.setOption(bar.options)
+
+</script>
+</body>
+</html>

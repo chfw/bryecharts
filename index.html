@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+	<script type="text/javascript" src="public/js/brython.js"></script>
+	<script type="text/javascript" src="public/js/brython_stdlib.js"></script>
+	<script type="text/javascript" src="public/js/jquery.2.2.4.min.js"></script>
+	<script type="text/javascript" src="public/js/jquery.ui.1.12.1.js"></script>
+	<script type="text/javascript" src="public/js/bootstrap.4.0.0.beta.min.js"></script>
+	<script type="text/javascript" src="public/js/jquery.layout.1.4.3.min.js"></script>
+	<link rel="stylesheet" type="text/css" href="public/css/layout-default.1.4.3.min.css"></link>
+	<script type="text/javascript" src="public/js/ace.js" charset="utf-8"></script>
+	<link rel="stylesheet" type="text/css" href="public/css/style.css">
+	<link rel="stylesheet" type="text/css" href="public/css/bootstrap.4.0.0.beta.min.css">	
+	<title>Practice pyecharts in browser</title>
+	<!--	<link href="css/style.css"></link> -->
+	<script src="public/js/startup.js"></script>
+  </head>
+  <body>
+	<div id='drawme' class="ui-layout-center custom-center">
+	  <div id='me' style="width:1300px;height:400px;"></div>
+	  <script type="text/javascript">
+		function achart(){
+		return echarts.init(document.getElementById('me'));
+		}
+	  </script>
+	</div>
+	<div class="ui-layout-north custom-north">
+	  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+		<a class="navbar-brand" href="#">Pyecharts in Browser</a>
+		<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+		  <span class="navbar-toggler-icon"></span>
+		</button>
+		
+		<div class="collapse navbar-collapse" id="navbarSupportedContent">
+		  <ul class="navbar-nav mr-auto">
+			<li class="nav-item active">
+			  <a class="nav-link" href="#" id="run">Run <span class="sr-only">(current)</span></a>
+			</li>
+		  </ul>
+		  <a class="navbar-brand" href="https://github.com/chfw/bryecharts">Bryecharts</a>
+		</div>
+	  </nav>
+	  <div id="editor" >from pyecharts import Map
+
+value = [95.1, 23.2, 43.3, 66.4, 88.5]
+attr= ["China", "Canada", "Brazil", "Russia", "United States"]
+map = Map("World Map Example", width=1200, height=600)
+map.add("", attr, value, maptype="world", is_visualmap=True, visual_text_color='#000')
+map.render()</div>
+	  </div>
+	<div id='version' style="display:none"></div>
+	<textarea id='console' cols=50 rows=10 style="display:none"></textarea>
+
+	<!-- this line demonstrates that script.py can be included as any javascript files -->
+	<script type="text/python" src="public/python/script.py"></script>
+  </body>
+</html>
