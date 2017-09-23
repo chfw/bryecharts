@@ -1,6 +1,13 @@
 var myLayout;
 $(document).ready(function () {
-  brython({"pythonpath": ['/bryecharts/', '/', 'public/python', '/bryecharts/public/python']});
+  var url = document.URL;
+  var python_path;
+  if(url.indexOf('chfw.github.io') != -1){
+    python_path = ['/bryecharts/','/bryecharts/public/python'];
+  }else{
+    python_path = ['/', 'public/python' ];
+  }
+  brython({"pythonpath": python_path});
   var editor = ace.edit("editor");
   editor.setTheme("ace/theme/monokai");
   editor.getSession().setMode("ace/mode/python");
