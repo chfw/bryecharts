@@ -11,9 +11,17 @@ bryecharts is a [Brython](https://github.com/brython-dev/brython) port of pyecha
 
 ### Offline usage
 
-1. Clone it, `git clone https://github.com/chfw/bryecharts/`
-1. Run a static http server, `python -m http.server`
+1. Clone it
+1. Run a static http server
 1. Open a browser and visit http://localhost:8000
+
+Here are all the commands:
+
+```
+$ git clone https://github.com/chfw/bryecharts/
+$ cd bryecharts
+$ python -m http.server # python 2, please use python -m SimpleHTTPServer
+```
 
 Then you can do paste and run.
 
