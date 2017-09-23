@@ -1,6 +1,6 @@
 var myLayout;
 $(document).ready(function () {
-  brython({"pythonpath": ['/bryecharts/', '/']});
+  brython({"pythonpath": ['/bryecharts/', '/', 'public/python', '/bryecharts/public/python']});
   var editor = ace.edit("editor");
   editor.setTheme("ace/theme/monokai");
   editor.getSession().setMode("ace/mode/python");
