@@ -8,6 +8,15 @@ bryecharts is a [Brython](https://github.com/brython-dev/brython) port of pyecha
 1. Paste your [sample codes](https://github.com/chenjiandongx/pyecharts/blob/master/docs/zh-cn/documentation.md) into the editor or write your own code from scratch
 1. Press 'Run'
 
+
+### Offline usage
+
+1. Clone it, `git clone https://github.com/chfw/bryecharts/`
+1. Run a static http server, `python -m http.server`
+1. Open a browser and visit http://localhost:8000
+
+Then you can do paste and run.
+
 ## Baselines
 
 1. pyecharts v0.2.4

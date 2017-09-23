@@ -11,16 +11,6 @@ _height = doc.documentElement.clientHeight
 has_ace = True
 try:
     editor = window.ace.edit("editor")
-    session = editor.getSession()
-    editor.setTheme("ace/theme/monokai")
-    session.setMode("ace/mode/python")
-
-    editor.setOptions({
-     'enableLiveAutocompletion': True,
-     'enableSnippets': True,
-     'highlightActiveLine': False,
-     'highlightSelectedWord': True
-    })
 except:
     from browser import html
     editor = html.TEXTAREA(rows=20, cols=70)
