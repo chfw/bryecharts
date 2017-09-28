@@ -27,7 +27,8 @@ Then you can do paste and run.
 
 ## Baselines
 
-1. pyecharts v0.2.4
+
+1. pyecharts v0.2.5
 1. Brython 3.3.2 (Python 3 variant)
 
 ## License
