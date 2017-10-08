@@ -2,10 +2,8 @@
 # coding=utf-8
 
 import json
-import uuid
 import random
 import datetime
-from pprint import pprint
 from browser import window, load, doc
 
 
@@ -117,7 +115,7 @@ class Base(object):
         )
         self._jshost = jshost if jshost else constants.CONFIGURATION['HOST']
         self._js_dependencies = {'echarts'}
-        self._chart_id = uuid.uuid4().hex
+        self._chart_id = ''
 
     def add(self, angle_data=None,
             angle_range=None,
@@ -294,10 +292,6 @@ class Base(object):
             zaxis3d_margin=None):
         """ The base class's add() is just to provide a hint option """
         pass
-
-    def show_config(self):
-        """ Print all options of charts"""
-        pprint(self._option)
 
     @property
     def options(self):

@@ -21,10 +21,11 @@ except:
     editor.setValue = set_value
     has_ace = False
 
-if hasattr(window, 'localStorage'):
-    from browser.local_storage import storage
-else:
-    storage = None
+#if hasattr(window, 'localStorage'):
+#    from browser.local_storage import storage
+#else:
+#    storage = None
+storage = None
 
 if 'set_debug' in doc:
     __BRYTHON__.debug = int(doc['set_debug'].checked)
