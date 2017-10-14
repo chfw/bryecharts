@@ -57,7 +57,6 @@ def test_line_type():
     line = Line("折线图-阶梯图示例")
     line.add("商家A", attr, v1, is_step=True, is_label_show=True)
     assert '"step": true' in line._repr_html_()
-    line.render()
 
     # line is_fill
     line = Line("折线图-面积图示例")
@@ -66,13 +65,14 @@ def test_line_type():
     line.add("商家B", attr, v2, is_fill=True, area_color='#000',
              area_opacity=0.3, is_smooth=True)
     assert '"step": true' not in line._repr_html_()
-    line.render()
 
     # line yAxis type 'log'
     import math
     import random
     line = Line("折线图示例")
-    line.add("商家A", attr, [math.log10(random.randint(1, 99999)) for _ in range(6)])
-    line.add("商家B", attr, [math.log10(random.randint(1, 99999999)) for _ in range(6)],
+    line.add("商家A", attr,
+             [math.log10(random.randint(1, 99999)) for _ in range(6)])
+    line.add("商家B", attr,
+             [math.log10(random.randint(1, 99999999)) for _ in range(6)],
              yaxis_type="log")
     line.render()

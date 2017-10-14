@@ -4,6 +4,13 @@ from __future__ import unicode_literals
 
 from pyecharts import Geo
 
+chart_init = {
+    "title_color": "#fff",
+    "title_pos": "center",
+    "width": 1200,
+    "height": 600,
+    "background_color":'#404a59'
+}
 
 def test_geo_china():
     data = [
@@ -199,49 +206,43 @@ def test_geo_china():
         ("大庆", 279)
     ]
     # geo type 'scatter'
-    geo = Geo("全国主要城市空气质量", "data from pm2.5", title_color="#fff",
-              title_pos="center", width=1200, height=600,
-              background_color='#404a59')
+    geo = Geo("全国主要城市空气质量", "data from pm2.5", **chart_init)
     attr, value = geo.cast(data)
-    geo.add("", attr, value, visual_range=[0, 200], visual_text_color="#fff",
-            symbol_size=15, is_visualmap=True)
-    assert '"type": "scatter"' in geo._repr_html_()
-    assert '"type": "heatmap"' not in geo._repr_html_()
-    assert '"type": "effectScatter"' not in geo._repr_html_()
-    geo.render()
+    geo.add("", attr, value, visual_range=[0, 200],
+            visual_text_color="#fff", is_legend_show=False,
+            symbol_size=15, is_visualmap=True, tooltip_formatter='{b}',
+            label_emphasis_textsize=15, label_emphasis_pos='right')
+    html_content = geo._repr_html_()
+    assert '"type": "scatter"' in html_content
+    assert '"type": "heatmap"' not in html_content
+    assert '"type": "effectScatter"' not in html_content
 
     # geo type 'heatmap'
-    geo = Geo("全国主要城市空气质量", "data from pm2.5", title_color="#fff",
-              title_pos="center", width=1200, height=600,
-              background_color='#404a59')
+    geo = Geo("全国主要城市空气质量", "data from pm2.5", **chart_init)
     attr, value = geo.cast(data)
     geo.add("", attr, value, type="heatmap", is_visualmap=True,
             visual_range=[0, 300], visual_text_color='#fff')
     assert '"type": "heatmap"' in geo._repr_html_()
-    geo.render()
 
-    # geo type 'effectScatter'
+
+def test_geo_type_effectscatter():
     data = [
         ("海门", 9), ("鄂尔多斯", 12), ("招远", 12),
         ("舟山", 12), ("齐齐哈尔", 14), ("盐城", 15)
     ]
-    geo = Geo("全国主要城市空气质量", "data from pm2.5", title_color="#fff",
-              title_pos="center", width=1200, height=600,
-              background_color='#404a59')
+    geo = Geo("全国主要城市空气质量", "data from pm2.5", **chart_init)
     attr, value = geo.cast(data)
     geo.add("", attr, value, type="effectScatter", is_random=True,
             effect_scale=5)
     assert '"type": "effectScatter"' in geo._repr_html_()
-    geo.render()
 
-    # geo_with_noexist_city
+
+def test_geo_with_noexist_city():
     data = [
         ("海门", 9), ("鄂尔多斯", 12), ("招远", 12),
         ("舟山", 12), ("齐齐哈尔", 14), ("伦敦", 15)
     ]
-    geo = Geo("全国主要城市空气质量", "data from pm2.5", title_color="#fff",
-              title_pos="center", width=1200, height=600,
-              background_color='#404a59')
+    geo = Geo("全国主要城市空气质量", "data from pm2.5", **chart_init)
     attr, value = geo.cast(data)
     geo.add("", attr, value, type="effectScatter", is_random=True,
             effect_scale=5)
@@ -253,9 +254,7 @@ def test_geo_guangdong_province():
         ('汕头市', 50), ('汕尾市', 60), ('揭阳市', 35),
         ('阳江市', 44), ('肇庆市', 72)
     ]
-    geo = Geo("广东城市空气质量", "data from pm2.5", title_color="#fff",
-              title_pos="center", width=1200, height=600,
-              background_color='#404a59')
+    geo = Geo("广东城市空气质量", "data from pm2.5", **chart_init)
     attr, value = geo.cast(data)
     geo.add("", attr, value, maptype='广东', type="effectScatter",
             is_random=True, effect_scale=5, is_legend_show=False)
@@ -266,9 +265,9 @@ def test_geo_shantou_city():
     data = [
         ('澄海区', 30), ('南澳县', 40), ('龙湖区', 50), ('金平区', 60)
     ]
-    geo = Geo("汕头市地图示例", title_color="#fff", title_pos="center",
-              width=1200, height=600, background_color='#404a59')
+    geo = Geo("汕头市地图示例", **chart_init)
     attr, value = geo.cast(data)
     geo.add("", attr, value, maptype="汕头", is_visualmap=True,
-            is_legend_show=False)
+            tooltip_formatter='{b}', is_legend_show=False,
+            label_emphasis_textsize=15, label_emphasis_pos='right')
     geo.render()

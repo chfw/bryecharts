@@ -6,7 +6,6 @@ import random
 import datetime
 from browser import window, load, doc
 
-
 from pyecharts.option import get_all_options
 from pyecharts import template
 import pyecharts.constants as constants
@@ -122,9 +121,12 @@ class Base(object):
             area_color=None,
             area_opacity=None,
             axis_range=None,
+            bar_category_gap=None,
             border_color=None,
             boundary_gap=None,
             center=None,
+            calendar_date_range=None,
+            calendar_cell_size=None,
             datazoom_type=None,
             datazoom_range=None,
             datazoom_orient=None,
@@ -160,14 +162,15 @@ class Base(object):
             is_area_show=None,
             is_axisline_show=None,
             is_calculable=None,
+            is_calendar_heatmap=None,
             is_clockwise=None,
             is_convert=None,
             is_datazoom_show=None,
-            is_emphasis=None,
             is_fill=None,
             is_focusnode=None,
             is_grid3d_rotate=None,
             is_label_show=None,
+            is_label_emphasis=None,
             is_legend_show=None,
             is_liquid_animation=None,
             is_liquid_outline_show=None,
@@ -182,6 +185,7 @@ class Base(object):
             is_stack=None,
             is_step=None,
             is_symbol_show=None,
+            is_map_symbol_show=None,
             is_visualmap=None,
             is_xaxislabel_align=None,
             is_yaxislabel_align=None,
@@ -189,12 +193,17 @@ class Base(object):
             is_yaxis_inverse=None,
             is_xaxis_boundarygap=None,
             is_yaxis_boundarygap=None,
+            is_xaxis_show=None,
+            is_yaxis_show=None,
             item_color=None,
             label_color=None,
             label_pos=None,
             label_text_color=None,
             label_text_size=None,
             label_formatter=None,
+            label_emphasis_textcolor=None,
+            label_emphasis_textsize=None,
+            label_emphasis_pos=None,
             legend_orient=None,
             legend_pos=None,
             legend_top=None,
@@ -209,6 +218,8 @@ class Base(object):
             liquid_color=None,
             maptype=None,
             mark_line=None,
+            mark_line_symbolsize=None,
+            mark_line_valuedim=None,
             mark_point=None,
             mark_point_symbol=None,
             mark_point_symbolsize=None,
@@ -231,6 +242,9 @@ class Base(object):
             tooltip_formatter=None,
             tooltip_text_color=None,
             tooltip_font_size=None,
+            treemap_left_depth=None,
+            treemap_drilldown_icon=None,
+            treemap_visible_min=None,
             visual_orient=None,
             visual_range_color=None,
             visual_range_size=None,
@@ -289,9 +303,13 @@ class Base(object):
             zaxis3d_name_gap=None,
             zaxis3d_min=None,
             zaxis3d_max=None,
-            zaxis3d_margin=None):
-        """ The base class's add() is just to provide a hint option """
+            zaxis3d_margin=None, **kwargs):
+        """ The base class's add() is just to provide a hint option"""
         pass
+
+    def show_config(self):
+        """ Print all options of charts"""
+        print(json_dumps(self._option, indent=4))
 
     @property
     def options(self):

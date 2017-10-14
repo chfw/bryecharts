@@ -14,12 +14,15 @@ def collectfuncs(func):
 
 @collectfuncs
 def label(type=None,
-          is_emphasis=True,
           is_label_show=False,
+          is_label_emphasis=True,
           label_pos=None,
           label_text_color="#000",
           label_text_size=12,
           label_formatter=None,
+          label_emphasis_pos=None,
+          label_emphasis_textcolor='#fff',
+          label_emphasis_textsize=12,
           **kwargs):
     """ Text label of , to explain some data information about graphic item like value,
         name and so on.In ECharts 3, to make the configuration structure flatter,
@@ -28,7 +31,7 @@ def label(type=None,
 
     :param type:
         Chart type
-    :param is_emphasis:
+    :param is_label_emphasis:
         It specifies whether to show laebl in emphasis status.
     :param is_label_show:
         It specifies whether to show laebl in normal status.
@@ -53,6 +56,12 @@ def label(type=None,
             {a} for series name, {b} for area name, {c} for merging data, {d} for none;
         Pie: charts, gauge charts, funnel charts: {a} for series name,
             {b} for data item name, {c} for data value, {d} for percentage.
+    :param label_emphasis_pos:
+        Label emphasis position.It can be 'top', 'left', 'right', 'bottom', 'inside','outside'
+    :param label_emphasis_textcolor:
+        Label emphasis text color.
+    :param label_emphasis_textsize:
+        Label emphasis font size.
     :param kwargs:
     :return:
     """
@@ -66,7 +75,13 @@ def label(type=None,
                 "color": label_text_color,
                 "fontSize": label_text_size
             }},
-        "emphasis": {"show": is_emphasis}
+        "emphasis": {
+            "show": is_label_emphasis,
+            "position": label_emphasis_pos,
+            "textStyle": {
+                "color": label_emphasis_textcolor,
+                "fontSize": label_emphasis_textsize,
+            }}
     }
 
     if label_formatter is None:
@@ -254,6 +269,8 @@ def xy_axis(type=None,
             is_yaxislabel_align=False,
             is_xaxis_boundarygap=True,
             is_yaxis_boundarygap=True,
+            is_xaxis_show=True,
+            is_yaxis_show=True,
             **kwargs):
     """
     :param type:
@@ -373,11 +390,16 @@ def xy_axis(type=None,
         Default value is set to be true, in which case axisTick is served
         only as a separation line, and labels and data appear only in
         the center part of two axis ticks, which is called band.
+    :param is_xaxis_show:
+        It specifies whether to show xAxis
+    :param is_yaxis_show:
+        It specifies whether to show yAxis
     :param kwargs:
     :return:
     """
     _xAxis = {
         "name": xaxis_name,
+        "show": is_xaxis_show,
         "nameLocation": xaxis_name_pos,
         "nameGap": xaxis_name_gap,
         "nameTextStyle": {"fontSize": xaxis_name_size},
@@ -397,6 +419,7 @@ def xy_axis(type=None,
     }
     _yAxis = {
         "name": yaxis_name,
+        "show": is_yaxis_show,
         "nameLocation": yaxis_name_pos,
         "nameGap": yaxis_name_gap,
         "nameTextStyle": {"fontSize": yaxis_name_size},
@@ -429,10 +452,7 @@ def xy_axis(type=None,
         _xAxis.update(data=x_axis, type=xaxis_type)
         _yAxis.update(type=yaxis_type)
 
-    if type == "candlestick":
-        _xAxis.update(scale=True)
-        _yAxis.update(scale=True, splitArea={"show": True})
-
+    # 强制分割数值轴，在多 x、y 轴中可以使用强制分割使标刻线对齐
     if xaxis_force_interval is not None:
         _xAxis.update(interval=xaxis_force_interval)
     if yaxis_force_interval is not None:
@@ -445,6 +465,8 @@ def _mark(data,
           mark_point_symbol='pin',
           mark_point_symbolsize=50,
           mark_point_textcolor='#fff',
+          mark_line_symbolsize=10,
+          mark_line_valuedim=None,
           _is_markline=False,
           **kwargs):
     """
@@ -464,9 +486,15 @@ def _mark(data,
         mark symbol, it can be 'circle', 'rect', 'roundRect', 'triangle',
         'diamond', 'pin', 'arrow'
     :param mark_point_symbolsize:
-        mark symbol size
+        markPoint symbol size
     :param mark_point_textcolor:
         mark point text color
+    :param mark_line_symbolsize:
+        markLine symbol size
+    :param mark_line_valuedim:
+        Works only when type is assigned. It is used to state the dimension used to
+        calculate maximum value or minimum value. It may be the direct name of a
+        dimension, like x, or angle for line charts, or open, or close for candlestick charts.
     :param _is_markline:
         It specifies whether is markline or not.
     :return:
@@ -497,16 +525,25 @@ def _mark(data,
                 elif "average" in d:
                     _type, _name = "average", "mean-Value"
 
-                _marktmp = {"type": _type, "name": _name}
-                if not _is_markline:
+                if _is_markline:
+                    _marktmp = {
+                        "type": _type,
+                        "name": _name,
+                        'valueDim': mark_line_valuedim,
+                    }
+                    if _type:
+                        mark.get("data").append(_marktmp)
+                        mark.update(symbolSize=mark_line_symbolsize)
+                else:
+                    _marktmp = {"type": _type, "name": _name}
                     _marktmp.update(
                         symbol=mark_point_symbol,
                         symbolSize=mark_point_symbolsize,
                         label={"normal": {
                             "textStyle": {"color": mark_point_textcolor}}
                         })
-                if _type:
-                    mark.get("data").append(_marktmp)
+                    if _type:
+                        mark.get("data").append(_marktmp)
     return mark
 
 
@@ -531,7 +568,7 @@ def mark_line(mark_line=None, **kwargs):
     :param kwargs:
     :return:
     """
-    return _mark(mark_line, _is_markline=True)
+    return _mark(mark_line, _is_markline=True, **kwargs)
 
 
 @collectfuncs
@@ -687,7 +724,8 @@ def visual_map(visual_type='color',
         "dimension": visual_dimension,
         "orient": visual_orient,
         "left": visual_pos,
-        "top": visual_top
+        "top": visual_top,
+        "showLabel": True,
     }
     return _visual_map
 
@@ -758,7 +796,7 @@ def datazoom(is_datazoom_show=False,
     :param is_datazoom_show:
         It specifies whether to use the datazoom component.
     :param datazoom_type:
-        datazoom type, 'slider' or 'inside'
+        datazoom type, 'slider', 'inside', or 'both'
     :param datazoom_range:
         The range percentage of the window out of the data extent,in
         the range of 0 ~ 100.
@@ -779,18 +817,24 @@ def datazoom(is_datazoom_show=False,
     if datazoom_range:
         if len(datazoom_range) == 2:
             _min, _max = datazoom_range
-    if datazoom_type not in ("slider", "inside"):
+    if datazoom_type not in ("slider", "inside", "both"):
         datazoom_type = "slider"
-    _datazoom = {
+    _datazoom = []
+    _datazoom_config = {
         "show": is_datazoom_show,
-        "type": datazoom_type,
+        "type": "slider",
         "start": _min,
         "end": _max,
         "orient": datazoom_orient,
         "xAxisIndex": datazoom_xaxis_index,
         "yAxisIndex": datazoom_yaxis_index
     }
-    return [_datazoom]
+    if datazoom_type == "both":
+        _datazoom.append(_datazoom_config.copy())
+        datazoom_type = 'inside'
+    _datazoom_config['type'] = datazoom_type
+    _datazoom.append(_datazoom_config)
+    return _datazoom
 
 
 @collectfuncs
@@ -1088,6 +1132,41 @@ def tooltip(type=None,
         }
     }
     return _tooltip
+
+
+@collectfuncs
+def calendar(calendar_date_range=None,
+             calendar_cell_size=None,
+             **kwargs):
+    """
+
+    :param calendar_date_range:
+        Required, range of Calendar coordinates, support multiple formats.
+        Examples:
+            # one year
+                range: 2017
+            # one month
+                range: '2017-02'
+            # a range
+                range: ['2017-01-02', '2017-02-23']
+            # note: they will be identified as ['2017-01-01', '2017-02-01']
+                range: ['2017-01', '2017-02']
+    :param calendar_cell_size:
+        The size of each rect of calendar coordinates, can be set to a single
+        value or array, the first element is width and the second element
+        is height.Support setting self-adaptation: "auto"
+    :param kwargs:
+    :return:
+    """
+
+    if calendar_cell_size is None:
+        calendar_cell_size = ['auto', 20]
+
+    _calendar = {
+        "range": calendar_date_range,
+        "cellSize": calendar_cell_size
+    }
+    return _calendar
 
 
 def get_all_options(**kwargs):
