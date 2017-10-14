@@ -1,6 +1,0 @@
-nose
-codecov
-coverage
-pandas
-numpy
-jupyter
