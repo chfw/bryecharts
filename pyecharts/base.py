@@ -7,7 +7,7 @@ import datetime
 from browser import window, load, doc
 
 from pyecharts.option import get_all_options
-import pyecharts.template as template
+from pyecharts import template
 import pyecharts.constants as constants
 
 
