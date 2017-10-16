@@ -1,14 +1,14 @@
 {
-  "name": "bryecharts",
+  "name": "pyecharts.js",
   "version": "1.0.26",
   "description": "Draw echarts using python language in modern browsers",
-  "main": "brython_modules.js",
+  "main": "pyecharts.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/chfw/bryecharts.git"
+    "url": "git+https://github.com/chfw/pyecharts.js.git"
   },
   "keywords": [
     "echarts"
@@ -16,7 +16,7 @@
   "author": "C.W.",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/chfw/bryecharts/issues"
+    "url": "https://github.com/chfw/pyecharts.js/issues"
   },
-  "homepage": "https://github.com/chfw/bryecharts#readme"
+  "homepage": "https://github.com/chfw/pyecharts.js#readme"
 }
