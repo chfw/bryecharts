@@ -1,4 +1,4 @@
-all: tests
+all: build 
 
-tests:
-	bash test.sh
+build:
+	bash build.sh
