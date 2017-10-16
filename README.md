@@ -31,11 +31,24 @@ $ python -m http.server # python 2, please use python -m SimpleHTTPServer
 
 Then you can do paste and run.
 
+## Development
+
+You will need python 3 for development and can develop it like any other python packages. Once
+you are happy with your changes, here is the command for packaging:
+
+```
+make
+```
+
+The hard work is to find out the relevant dependency for packaging and list them in bp-requirements.txt. The current practices is trial the demo in your browser and
+see which standard module are missing. Place its name in bp-requirements.txt. Repeat it until you get zero import errors.
+
+
 ## Baselines
 
 
-1. pyecharts v0.2.5
-1. Brython 3.3.2 (Python 3 variant)
+1. pyecharts v0.2.6
+1. Brython 3.3.2
 
 ## License
 
