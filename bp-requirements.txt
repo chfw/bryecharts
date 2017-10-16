@@ -1,4 +1,3 @@
-template
 reprlib
 _weakrefset
 builtins
