@@ -1,16 +1,18 @@
-# bryecharts.js
+# pyecharts.js
 
-bryecharts.js is a [Brython](https://github.com/brython-dev/brython) port of pyecharts to generate echarts directly in modern browsers.
+pyecharts.js is a [Brython](https://github.com/brython-dev/brython) port of pyecharts to generate echarts directly in modern browsers.
+
+It is a fun project to play with Brython, which let you run pure python code in browsers.
 
 ## Installation
 
 ```
-npm install --save bryecharts
+npm install --save pyecharts
 ```
 
 ## Demo
 
-1. Visit https://chfw.github.io/bryecharts/
+1. Visit https://chfw.github.io/pyecharts/
 1. Paste your [sample codes](https://github.com/chenjiandongx/pyecharts/blob/master/docs/zh-cn/documentation.md) into the editor or write your own code from scratch
 1. Press 'Run'
 
@@ -24,8 +26,8 @@ npm install --save bryecharts
 Here are all the commands:
 
 ```
-$ git clone https://github.com/chfw/bryecharts/
-$ cd bryecharts
+$ git clone https://github.com/chfw/pyecharts/
+$ cd pyecharts
 $ python -m http.server # python 2, please use python -m SimpleHTTPServer
 ```
 
@@ -52,5 +54,5 @@ see which standard module are missing. Place its name in bp-requirements.txt. Re
 
 ## License
 
-bryecharts.js will be released under the MIT License. See LICENSE for more information.
+pyecharts.js will be released under the MIT License. See LICENSE for more information.
 
