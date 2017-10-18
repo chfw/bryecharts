@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # coding=utf-8
-
+from browser import doc, load
 import pyecharts.constants as constants
 from pyecharts.template import (
     produce_html_script_list)
@@ -34,7 +34,18 @@ class Page(object):
         :param path:
         :return:
         """
-        raise Exception("Not Implemented")
+        for js_url in self.get_js_dependencies():
+            load(constants.DEFAULT_HOST + '/' + js_url + ".js")
+        while doc['me'].hasChildNodes():
+            doc['me'].removeChild(doc['me'].lastChild)
+        self.draw()
+
+    def draw(self):
+        """
+        add all charts to dom
+        """
+        for chart in self.__charts:
+            chart.draw()
 
     def get_js_dependencies(self):
         """

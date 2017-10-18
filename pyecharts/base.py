@@ -402,7 +402,17 @@ class Base(object):
     def render(self, _=None):
         for js_url in self.get_js_dependencies():
             load(constants.DEFAULT_HOST + '/' + js_url + ".js")
-        myechart = window.echarts.init(doc['me'])
+
+        while doc['me'].hasChildNodes():
+            doc['me'].removeChild(doc['me'].lastChild)
+        self.draw()
+
+    def draw(self):
+        div = doc.createElement('div')
+        div.style.width = self._width
+        div.style.height = self._height
+        doc['me'].appendChild(div)
+        myechart = window.echarts.init(div)
         myechart.setOption(self.options)
 
 
