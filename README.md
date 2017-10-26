@@ -1,5 +1,7 @@
 # pyecharts.js
 
+[![npm version](https://badge.fury.io/js/pyecharts.js.svg)](https://badge.fury.io/js/pyecharts.js)
+
 pyecharts.js is a [Brython](https://github.com/brython-dev/brython) port of pyecharts to generate echarts directly in modern browsers.
 
 It is a fun project to play with Brython, which let you run pure python code in browsers.

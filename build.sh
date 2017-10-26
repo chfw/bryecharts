@@ -10,4 +10,6 @@ mv brython_modules.log.txt changelog/
 npm install
 gulp
 cp README.md npm/
+cp js-changelog.md npm/changelog.md
+cat py-changelog.md >> npm/changelog.md
 echo "Done"
