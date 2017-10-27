@@ -1,16 +1,25 @@
 #!/usr/bin/env python
 # coding=utf-8
+import copy
 
 from pyecharts.option import grid
-from pyecharts import template
 from pyecharts.constants import PAGE_TITLE
+from pyecharts.base import Base
 
 
-class Grid(object):
-
-    def __init__(self, page_title=PAGE_TITLE):
-        self._chart = None
-        self._js_dependencies = set()
+class Grid(Base):
+    """
+    用户可以自定义结合 Line/Bar/Kline/Scatter/EffectScatter/Pie/HeatMap
+    /Boxplot 图表，将不同类型图表画在多张图上。第一个图需为 有 x/y 轴的图，
+    即不能为 Pie，其他位置顺序任意。
+    """
+    def __init__(self, page_title=PAGE_TITLE,
+                 width=800,
+                 height=400,
+                 jshost=None):
+        super(Grid, self).__init__(
+            width=width, height=height, jshost=jshost
+        )
         self._page_title = page_title
 
     def add(self, chart,
@@ -23,67 +32,76 @@ class Grid(object):
         """
 
         :param chart:
-            chart instance
+            图形实例
         :param grid_width:
-            Width of grid component. Adaptive by default.
+            grid 组件的宽度。默认自适应。
         :param grid_height:
-            Height of grid component. Adaptive by default.
+            grid 组件的高度。默认自适应。
         :param grid_top:
-            Distance between grid component and the top side of the container.
+            grid 组件离容器顶部的距离。默认为 None, 有'top', 'center',
+            'middle'可选，也可以为百分数或者整数
         :param grid_bottom:
-            Distance between grid component and the bottom side of the container.
+            grid 组件离容器底部的距离。默认为 None, 有'top', 'center',
+            'middle'可选，也可以为百分数或者整数
         :param grid_left:
-            Distance between grid component and the left side of the container.
+            grid 组件离容器左侧的距离。默认为 None, 有'left', 'center',
+            'right'可选，也可以为百分数或者整数
         :param grid_right:
-            Distance between grid component and the right side of the container.
-        :return:
+            grid 组件离容器右侧的距离。默认为 None, 有'left', 'center',
+            'right'可选，也可以为百分数或者整数
         """
-        if self._chart is None:
-            self._chart = chart
-            self._chart._option.update(grid=[])
-            self._js_dependencies = chart._js_dependencies
+        if not self._option:
+            self._option = copy.deepcopy(chart.options)
+            self._option.update(grid=[])
+            self._js_dependencies = chart.js_dependencies
 
             _grid = grid(
-                grid_width, grid_height, grid_top, grid_bottom, grid_left, grid_right)
+                grid_width, grid_height,
+                grid_top, grid_bottom, grid_left, grid_right)
             if _grid:
-                for _ in range(len(self._chart._option.get('series'))):
-                    self._chart._option.get('grid').append(_grid)
+                for _ in range(len(self._option.get('series'))):
+                    self._option.get('grid').append(_grid)
         else:
             _series = (
-                chart._option.get('series'),
-                chart._option.get('xAxis', None),
-                chart._option.get('yAxis', None),
-                chart._option.get('legend')[0],
-                chart._option.get('title')[0]
+                chart.options.get('series'),
+                chart.options.get('xAxis', None),
+                chart.options.get('yAxis', None),
+                chart.options.get('legend')[0],
+                chart.options.get('title')[0]
             )
-            _index, _index_once, _xaxis, _yaxis, _legend, _title = self.__custom(_series)
-            self._chart._option.get('legend').append(_legend)
-            self._chart._option.get('title').append(_title)
+            (_index, _index_once, _xaxis,
+             _yaxis, _legend, _title) = self.__custom(_series)
+            self._option.get('legend').append(_legend)
+            self._option.get('title').append(_title)
 
             if _xaxis and _yaxis is not None:
                 for _x in _xaxis:
                     _x.update(gridIndex=_index - 1)
-                    self._chart._option.get('xAxis').append(_x)
+                    self._option.get('xAxis').append(_x)
                 for _y in _yaxis:
                     _y.update(gridIndex=_index - 1)
-                    self._chart._option.get('yAxis').append(_y)
+                    self._option.get('yAxis').append(_y)
 
                 # series id is the only identify for every series
-                _flag = self._chart._option.get('series')[0].get('seriesId')
+                _flag = self._option.get('series')[0].get('seriesId')
                 _series_index = 0
-                for s in self._chart._option.get('series'):
+                for s in self._option.get('series'):
                     if _flag == s.get('seriesId'):
-                        s.update(xAxisIndex=_series_index, yAxisIndex=_series_index)
+                        s.update(xAxisIndex=_series_index,
+                                 yAxisIndex=_series_index)
                     else:
                         _series_index += 1
-                        s.update(xAxisIndex=_series_index, yAxisIndex=_series_index)
+                        s.update(xAxisIndex=_series_index,
+                                 yAxisIndex=_series_index)
                     _flag = s.get('seriesId')
 
             _grid = grid(
-                grid_width, grid_height, grid_top,grid_bottom, grid_left, grid_right)
+                grid_width, grid_height,
+                grid_top, grid_bottom, grid_left, grid_right)
             for _ in range(_index_once):
-                self._chart._option.get('grid').append(_grid)
-            self._js_dependencies = self._js_dependencies.union(chart._js_dependencies)
+                self._option.get('grid').append(_grid)
+            self._js_dependencies = self._js_dependencies.union(
+                chart.js_dependencies)
 
     def __custom(self, series):
         """
@@ -94,57 +112,6 @@ class Grid(object):
         """
         _series, _xaxis, _yaxis, _legend, _title = series
         for s in _series:
-            self._chart._option.get('series').append(s)
-        return len(self._chart._option.get('series')), len(_series), \
-               _xaxis, _yaxis, _legend, _title
-
-    def render(self, path="render.html"):
-        """
-
-        :param path:
-        :return:
-        """
-        self._chart.render(path)
-
-    def render_embed(self):
-        """
-
-        :return:
-        """
-        return self._chart.render_embed()
-
-    def show_config(self):
-        """
-
-        :return:
-        """
-        self._chart.show_config()
-
-    @property
-    def chart(self):
-        """
-
-        :return:
-        """
-        return self._chart
-
-    @property
-    def options(self):
-        """
-
-        :return:
-        """
-        return self._chart._option
-
-    def _repr_html_(self):
-        """
-
-        :return:
-        """
-        return self._chart._repr_html_()
-
-    def get_js_dependencies(self):
-        """
-        Declare its javascript dependencies for embedding purpose
-        """
-        return template.produce_html_script_list(self._js_dependencies)
+            self._option.get('series').append(s)
+        return len(self._option.get('series')), len(_series), \
+            _xaxis, _yaxis, _legend, _title

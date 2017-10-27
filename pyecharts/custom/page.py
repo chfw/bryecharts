@@ -1,15 +1,15 @@
-#!/usr/bin/env python
 # coding=utf-8
+
 from browser import doc, load
+import pyecharts.template as template
 import pyecharts.constants as constants
-from pyecharts.template import (
-    produce_html_script_list)
 
 
 class Page(object):
     """
     A composite object to present multiple charts vertically in a single page
     """
+
     def __init__(self, jshost=None, page_title=constants.PAGE_TITLE):
         self.__charts = []
         self._page_title = page_title
@@ -52,7 +52,7 @@ class Page(object):
         Declare its javascript dependencies for embedding purpose
         """
         unordered_js_dependencies = self._merge_dependencies()
-        return produce_html_script_list(unordered_js_dependencies)
+        return template.produce_html_script_list(unordered_js_dependencies)
 
     def _merge_dependencies(self):
         dependencies = set()
@@ -65,3 +65,11 @@ class Page(object):
             dependencies.remove('echarts')
             dependencies = ['echarts'] + list(dependencies)
         return dependencies
+
+    @property
+    def charts(self):
+        return self.__charts
+
+    @property
+    def js_dependencies(self):
+        return self._merge_dependencies()
