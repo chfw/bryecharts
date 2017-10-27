@@ -3987,6 +3987,240 @@ MutableSequence. register(list)
 MutableSequence. register(bytearray)
 ====collections.abc.py(file) end====
 
+====copy.py(file) start====
+''
+import types
+import weakref
+from copyreg import dispatch_table
+import builtins
+
+class Error(Exception):
+ pass
+error=Error
+PyStringMap=None
+
+__all__=["Error","copy","deepcopy"]
+
+def copy(x):
+ ''
+ cls=type(x)
+ copier=_copy_dispatch. get(cls)
+ if copier:
+  return copier(x)
+ copier=getattr(cls,"__copy__",None )
+ if copier:
+  return copier(x)
+ reductor=dispatch_table. get(cls)
+ if reductor:
+  rv=reductor(x)
+ else :
+  reductor=getattr(x,"__reduce_ex__",None )
+  if reductor:
+   rv=reductor(2)
+  else :
+   reductor=getattr(x,"__reduce__",None )
+   if reductor:
+    rv=reductor()
+   else :
+    raise Error("un(shallow)copyable object of type %s"%cls)
+ return _reconstruct(x,rv,0)
+_copy_dispatch=d={}
+
+def _copy_immutable(x):
+ return x
+for t in (type(None ),int,float,bool,str,tuple,
+frozenset,type,range,
+types. BuiltinFunctionType,type(Ellipsis),
+types. FunctionType,weakref. ref):
+ d[t]=_copy_immutable
+t=getattr(types,"CodeType",None )
+if t is not None :
+ d[t]=_copy_immutable
+for name in ("complex","unicode"):
+ t=getattr(builtins,name,None )
+ if t is not None :
+  d[t]=_copy_immutable
+def _copy_with_constructor(x):
+ return type(x)(x)
+for t in (list,dict,set):
+ d[t]=_copy_with_constructor
+def _copy_with_copy_method(x):
+ return x. copy()
+if PyStringMap is not None :
+ d[PyStringMap]=_copy_with_copy_method
+del d
+
+def deepcopy(x,memo=None ,_nil=[]):
+ ''
+ if memo is None :
+  memo={}
+ d=id(x)
+ y=memo. get(d,_nil)
+ if y is not _nil:
+  return y
+ cls=type(x)
+ copier=_deepcopy_dispatch. get(cls)
+ if copier:
+  y=copier(x,memo)
+ else :
+  try :
+   issc=issubclass(cls,type)
+  except TypeError:
+   issc=0
+  if issc:
+   y=_deepcopy_atomic(x,memo)
+  else :
+   copier=getattr(x,"__deepcopy__",None )
+   if copier:
+    y=copier(memo)
+   else :
+    reductor=dispatch_table. get(cls)
+    if reductor:
+     rv=reductor(x)
+    else :
+     reductor=getattr(x,"__reduce_ex__",None )
+     if reductor:
+      rv=reductor(2)
+     else :
+      reductor=getattr(x,"__reduce__",None )
+      if reductor:
+       rv=reductor()
+      else :
+       raise Error(
+       "un(deep)copyable object of type %s"%cls)
+    y=_reconstruct(x,rv,1,memo)
+ if y is not x:
+  memo[d]=y
+  _keep_alive(x,memo)
+ return y
+_deepcopy_dispatch=d={}
+
+def _deepcopy_atomic(x,memo):
+ return x
+d[type(None )]=_deepcopy_atomic
+d[type(Ellipsis)]=_deepcopy_atomic
+d[int]=_deepcopy_atomic
+d[float]=_deepcopy_atomic
+d[bool]=_deepcopy_atomic
+try :
+ d[complex]=_deepcopy_atomic
+except NameError:
+ pass
+d[bytes]=_deepcopy_atomic
+d[str]=_deepcopy_atomic
+try :
+ d[types. CodeType]=_deepcopy_atomic
+except AttributeError:
+ pass
+d[type]=_deepcopy_atomic
+d[range]=_deepcopy_atomic
+d[types. BuiltinFunctionType]=_deepcopy_atomic
+d[types. FunctionType]=_deepcopy_atomic
+d[weakref. ref]=_deepcopy_atomic
+
+def _deepcopy_list(x,memo):
+ y=[]
+ memo[id(x)]=y
+ for a in x:
+  y. append(deepcopy(a,memo))
+ return y
+d[list]=_deepcopy_list
+
+def _deepcopy_tuple(x,memo):
+ y=[]
+ for a in x:
+  y. append(deepcopy(a,memo))
+ try :
+  return memo[id(x)]
+ except KeyError:
+  pass
+ for i in range(len(x)):
+  if x[i]is not y[i]:
+   y=tuple(y)
+   break
+ else :
+  y=x
+ return y
+d[tuple]=_deepcopy_tuple
+
+def _deepcopy_dict(x,memo):
+ y={}
+ memo[id(x)]=y
+ for key,value in x. items():
+  y[deepcopy(key,memo)]=deepcopy(value,memo)
+ return y
+d[dict]=_deepcopy_dict
+if PyStringMap is not None :
+ d[PyStringMap]=_deepcopy_dict
+def _deepcopy_method(x,memo):
+ return type(x)(x. __func__,deepcopy(x. __self__,memo))
+_deepcopy_dispatch[types. MethodType]=_deepcopy_method
+
+def _keep_alive(x,memo):
+ ''
+ try :
+  memo[id(memo)]. append(x)
+ except KeyError:
+  memo[id(memo)]=[x]
+def _reconstruct(x,info,deep,memo=None ):
+ if isinstance(info,str):
+  return x
+ assert isinstance(info,tuple)
+ if memo is None :
+  memo={}
+ n=len(info)
+ assert n in (2,3,4,5)
+ callable,args=info[:2]
+ if n >2:
+  state=info[2]
+ else :
+  state={}
+ if n >3:
+  listiter=info[3]
+ else :
+  listiter=None
+ if n >4:
+  dictiter=info[4]
+ else :
+  dictiter=None
+ if deep:
+  args=deepcopy(args,memo)
+ y=callable(*args)
+ memo[id(x)]=y
+ if state:
+  if deep:
+   state=deepcopy(state,memo)
+  if hasattr(y,'__setstate__'):
+   y. __setstate__(state)
+  else :
+   if isinstance(state,tuple)and len(state)==2:
+    state,slotstate=state
+   else :
+    slotstate=None
+   if state is not None :
+    y. __dict__. update(state)
+   if slotstate is not None :
+    for key,value in slotstate. items():
+     setattr(y,key,value)
+ if listiter is not None :
+  for item in listiter:
+   if deep:
+    item=deepcopy(item,memo)
+   y. append(item)
+ if dictiter is not None :
+  for key,value in dictiter:
+   if deep:
+    key=deepcopy(key,memo)
+    value=deepcopy(value,memo)
+   y[key]=value
+ return y
+del d
+
+del types
+class _EmptyClass:
+ pass
+====copy.py(file) end====
+
 ====copyreg.py(file) start====
 ''
 __all__=["pickle","constructor",
@@ -8490,6 +8724,7 @@ from pyecharts.charts.effectscatter import EffectScatter
 from pyecharts.charts.funnel import Funnel
 from pyecharts.charts.gauge import Gauge
 from pyecharts.charts.geo import Geo
+from pyecharts.charts.geolines import GeoLines
 from pyecharts.charts.graph import Graph
 from pyecharts.charts.heatmap import HeatMap
 from pyecharts.charts.kline import Kline
@@ -8514,27 +8749,93 @@ from pyecharts.custom.page import Page
 from pyecharts.custom.timeline import Timeline
 
 from pyecharts.template import online
+from pyecharts.style import Style
 ====pyecharts.py(module) end====
 
 ====pyecharts._version.py(file) start====
-__version__ = '0.2.6'
+__version__ = '0.2.7'
 __author__ = 'chenjiandongx'
 ====pyecharts._version.py(file) end====
 
 ====pyecharts.base.py(file) start====
 
 import json
-import random
 import datetime
 from browser import window, load, doc
 
-from pyecharts.option import get_all_options
-from pyecharts import template
+import pyecharts.utils as utils
+import pyecharts.template as template
 import pyecharts.constants as constants
 
 
 class Base(object):
+    def __init__(self,
+                 width=800,
+                 height=400,
+                 page_title=constants.PAGE_TITLE,
+                 jshost=None):
+        self._option = {}
+        self._js_dependencies = set()
+        self._chart_id = ""
+        self.width, self.height = width, height
+        self._page_title = page_title
+        self._jshost = jshost if jshost else constants.CONFIGURATION['HOST']
+        self._js_dependencies = {'echarts'}
 
+    @property
+    def chart_id(self):
+        return self._chart_id
+
+    @property
+    def options(self):
+        return self._option
+
+    @property
+    def js_dependencies(self):
+        return self._js_dependencies
+
+    def show_config(self):
+        print(json_dumps(self._option, indent=4))
+
+    def get_js_dependencies(self):
+        return template.produce_html_script_list(self._js_dependencies)
+
+    def render(self, _=None):
+        for js_url in self.get_js_dependencies():
+            load(constants.DEFAULT_HOST + '/' + js_url + ".js")
+
+        while doc['me'].hasChildNodes():
+            doc['me'].removeChild(doc['me'].lastChild)
+        self.draw()
+
+    def draw(self):
+        div = doc.createElement('div')
+        div.style.width = self.width
+        div.style.height = self.height
+        doc['me'].appendChild(div)
+        myechart = window.echarts.init(div)
+        myechart.setOption(self.options)
+
+
+def handle(obj):
+    if isinstance(obj, (datetime.datetime, datetime.date)):
+        return obj.isoformat()
+
+
+def json_dumps(data, indent=0):
+    return json.dumps(data, indent=indent, default=handle)
+====pyecharts.base.py(file) end====
+
+====pyecharts.chart.py(file) start====
+
+import random
+
+from pyecharts.option import get_all_options
+from pyecharts.base import Base
+import pyecharts.constants as constants
+
+
+class Chart(Base):
     def __init__(self, title, subtitle,
                  width=800,
                  height=400,
@@ -8547,9 +8848,11 @@ class Base(object):
                  background_color="#fff",
                  page_title=constants.PAGE_TITLE,
                  jshost=None):
-        self._option = {}
-        self._width, self._height = width, height
-        self._page_title = page_title
+        super(Chart, self).__init__(
+            width=width, height=height,
+            page_title=page_title,
+            jshost=jshost
+        )
         self._colorlst = [
             '#c23531', '#2f4554', '#61a0a8', '#d48265', '#749f83',
             '#ca8622', '#bda29a', '#6e7074', '#546570', '#c4ccd3',
@@ -8585,15 +8888,12 @@ class Base(object):
                     "dataView": {"show": True},
                 }
             },
-            series_id = random.randint(1, 9000000),
+            series_id=random.randint(1, 9000000),
             tooltip={},
             series=[],
             legend=[{"data": []}],
             backgroundColor=background_color
         )
-        self._jshost = jshost if jshost else constants.CONFIGURATION['HOST']
-        self._js_dependencies = {'echarts'}
-        self._chart_id = ''
 
     def add(self, angle_data=None,
             angle_range=None,
@@ -8618,6 +8918,11 @@ class Base(object):
             geo_emphasis_color=None,
             geo_normal_color=None,
             geo_cities_coords=None,
+            geo_effect_period=None,
+            geo_effect_traillength=None,
+            geo_effect_color=None,
+            geo_effect_symbol=None,
+            geo_effect_symbolsize=None,
             graph_layout=None,
             graph_gravity=None,
             graph_edge_length=None,
@@ -8647,6 +8952,7 @@ class Base(object):
             is_datazoom_show=None,
             is_fill=None,
             is_focusnode=None,
+            is_geo_effect_show=None,
             is_grid3d_rotate=None,
             is_label_show=None,
             is_label_emphasis=None,
@@ -8785,35 +9091,6 @@ class Base(object):
             zaxis3d_margin=None, **kwargs):
         pass
 
-    def show_config(self):
-        print(json_dumps(self._option, indent=4))
-
-    @property
-    def options(self):
-        return self._option
-
-    @staticmethod
-    def cast(seq):
-        k_lst, v_lst = [], []
-        if isinstance(seq, list):
-            for s in seq:
-                try:
-                    if isinstance(s, tuple):
-                        _attr, _value = s
-                        k_lst.append(_attr)
-                        v_lst.append(_value)
-                    elif isinstance(s, dict):
-                        for k, v in s.items():
-                            k_lst.append(k)
-                            v_lst.append(v)
-                except:
-                    raise
-        elif isinstance(seq, dict):
-            for k, v in seq.items():
-                k_lst.append(k)
-                v_lst.append(v)
-        return k_lst, v_lst
-
     def _config_components(self, is_visualmap=False,
                            is_more_utils=False,
                            **kwargs):
@@ -8822,12 +9099,15 @@ class Base(object):
         self._option.update(color=chart['color'])
 
         self._option.get('legend')[0].update(chart['legend'])
+
         self._option.update(tooltip=chart['tooltip'])
 
-        if kwargs.get('is_datazoom_show', None) is True:    # do not change this line anymore
+        if kwargs.get('is_datazoom_show', None) is True:
             self._option.update(dataZoom=chart['datazoom'])
+
         if is_visualmap:
             self._option.update(visualMap=chart['visual_map'])
+
         if is_more_utils:
             self._option.get('toolbox').get('feature').update(
                 magicType={
@@ -8837,53 +9117,27 @@ class Base(object):
                         "line": "折线图",
                         "bar": "柱状图",
                         "stack": "堆叠",
-                        "tiled": "平铺"}},
+                        "tiled": "平铺"
+                    }},
                 dataZoom={
                     "show": True,
                     "title": {
                         "zoom": "区域缩放",
-                        "back": "缩放还原"}}
+                        "back": "缩放还原"
+                    }}
             )
-
-    def get_js_dependencies(self):
-        return template.produce_html_script_list(self._js_dependencies)
-
-    def render(self, _=None):
-        for js_url in self.get_js_dependencies():
-            load(constants.DEFAULT_HOST + '/' + js_url + ".js")
-
-        while doc['me'].hasChildNodes():
-            doc['me'].removeChild(doc['me'].lastChild)
-        self.draw()
-
-    def draw(self):
-        div = doc.createElement('div')
-        div.style.width = self._width
-        div.style.height = self._height
-        doc['me'].appendChild(div)
-        myechart = window.echarts.init(div)
-        myechart.setOption(self.options)
-
-
-def handle(obj):
-    if isinstance(obj, (datetime.datetime, datetime.date)):
-        return obj.isoformat()
-
-
-def json_dumps(data, indent=0):
-    return json.dumps(data, indent=indent, default=handle)
-====pyecharts.base.py(file) end====
+====pyecharts.chart.py(file) end====
 
 ====pyecharts.charts.py(module) start====
 ====pyecharts.charts.py(module) end====
 
 ====pyecharts.charts.bar.py(file) start====
 
-from pyecharts.base import Base
+from pyecharts.chart import Chart
 from pyecharts.option import get_all_options
 
 
-class Bar(Base):
+class Bar(Chart):
 
     def __init__(self, title="", subtitle="", **kwargs):
         super(Bar, self).__init__(title, subtitle, **kwargs)
@@ -8920,11 +9174,11 @@ class Bar(Base):
 
 ====pyecharts.charts.bar3D.py(file) start====
 
-from pyecharts.base import Base
+from pyecharts.chart import Chart
 from pyecharts.option import get_all_options
 
 
-class Bar3D(Base):
+class Bar3D(Chart):
 
     def __init__(self, title="", subtitle="", **kwargs):
         super(Bar3D, self).__init__(title, subtitle, **kwargs)
@@ -8965,11 +9219,11 @@ class Bar3D(Base):
 
 ====pyecharts.charts.boxplot.py(file) start====
 
-from pyecharts.base import Base
+from pyecharts.chart import Chart
 from pyecharts.option import get_all_options
 
 
-class Boxplot(Base):
+class Boxplot(Chart):
 
     def __init__(self, title="", subtitle="", **kwargs):
         super(Boxplot, self).__init__(title, subtitle, **kwargs)
@@ -9013,8 +9267,8 @@ class Boxplot(Base):
                         _result.append(_d[int(n) - 1] * 0.5 + _d[int(n)] * 0.5)
                     elif m == 3 / 4:
                         _result.append(_d[int(n) - 1] * 0.25 + _d[int(n)] * 0.75)
-                _result.insert(0, _d[0])    # min
-                _result.append(_d[-1])      # max
+                _result.insert(0, _d[0])    # 最小值
+                _result.append(_d[-1])      # 最大值
                 _data.append(_result)
             except Exception:
                 pass
@@ -9061,11 +9315,11 @@ class EffectScatter(Scatter):
 
 ====pyecharts.charts.funnel.py(file) start====
 
-from pyecharts.base import Base
+from pyecharts.chart import Chart
 from pyecharts.option import get_all_options
 
 
-class Funnel(Base):
+class Funnel(Chart):
     def __init__(self, title="", subtitle="", **kwargs):
         super(Funnel, self).__init__(title, subtitle, **kwargs)
 
@@ -9096,10 +9350,10 @@ class Funnel(Base):
 
 ====pyecharts.charts.gauge.py(file) start====
 
-from pyecharts.base import Base
+from pyecharts.chart import Chart
 
 
-class Gauge(Base):
+class Gauge(Chart):
     def __init__(self, title="", subtitle="", **kwargs):
         super(Gauge, self).__init__(title, subtitle, **kwargs)
 
@@ -9141,13 +9395,13 @@ class Gauge(Base):
 
 ====pyecharts.charts.geo.py(file) start====
 
-from pyecharts.base import Base
+from pyecharts.chart import Chart
 from pyecharts.option import get_all_options
 from pyecharts.constants import CITY_GEO_COORDS
 from pyecharts.constants import CITY_NAME_PINYIN_MAP
 
 
-class Geo(Base):
+class Geo(Chart):
     def __init__(self, title="", subtitle="", **kwargs):
         super(Geo, self).__init__(title, subtitle, **kwargs)
 
@@ -9174,13 +9428,13 @@ class Geo(Base):
             _geo_cities_coords = CITY_GEO_COORDS
 
         _data = []
-        for name, value in zip(attr, value):
-            if name in _geo_cities_coords:
-                city_coordinate = _geo_cities_coords.get(name)
-                city_coordinate.append(value)
-                _data.append({"name": name, "value": city_coordinate})
+        for _name, _value in zip(attr, value):
+            if _name in _geo_cities_coords:
+                city_coordinate = _geo_cities_coords.get(_name)
+                city_coordinate.append(_value)
+                _data.append({"name": _name, "value": city_coordinate})
             else:
-                print("%s coordinates is not found" % name)
+                print("%s coordinates is not found" % _name)
         self._option.update(
             geo={
                 "map": maptype,
@@ -9239,13 +9493,131 @@ class Geo(Base):
         self._config_components(**kwargs)
 ====pyecharts.charts.geo.py(file) end====
 
+====pyecharts.charts.geolines.py(file) start====
+
+from pyecharts.chart import Chart
+from pyecharts.option import get_all_options
+from pyecharts.constants import (CITY_GEO_COORDS,
+                                 CITY_NAME_PINYIN_MAP, SYMBOL)
+
+
+class GeoLines(Chart):
+    def __init__(self, title="", subtitle="", **kwargs):
+        super(GeoLines, self).__init__(title, subtitle, **kwargs)
+        self._zlevel = 1
+
+    def add(self, *args, **kwargs):
+        self.__add(*args, **kwargs)
+
+    def __add(self, name, data,
+              maptype='china',
+              symbol=None,
+              symbol_size=12,
+              border_color="#111",
+              geo_normal_color="#323c48",
+              geo_emphasis_color="#2a333d",
+              geo_cities_coords=None,
+              geo_effect_period=6,
+              geo_effect_traillength=0,
+              geo_effect_color='#fff',
+              geo_effect_symbol='circle',
+              geo_effect_symbolsize=5,
+              is_geo_effect_show=True,
+              is_roam=True,
+              **kwargs):
+
+        chart = get_all_options(**kwargs)
+        self._zlevel += 1
+        if geo_cities_coords:
+            _geo_cities_coords = geo_cities_coords
+        else:
+            _geo_cities_coords = CITY_GEO_COORDS
+
+        if geo_effect_symbol == "plane":
+            geo_effect_symbol = SYMBOL['plane']
+
+        _data_lines, _data_scatter = [], []
+        for d in data:
+            _from_name, _to_name = d
+            _data_lines.append({
+                "fromName": _from_name,
+                "toName": _to_name,
+                "coords": [
+                    _geo_cities_coords.get(_from_name, []),
+                    _geo_cities_coords.get(_to_name, [])
+                ]
+            })
+            _from_v = _geo_cities_coords.get(_from_name, [])
+            _data_scatter.append({
+                "name": _from_name,
+                "value": _from_v + [0]
+            })
+            _to_v = _geo_cities_coords.get(_to_name, [])
+            _data_scatter.append({
+                "name": _to_name,
+                "value": _to_v + [0]
+            })
+
+        self._option.update(
+            geo={
+                "map": maptype,
+                "roam": is_roam,
+                "label": {
+                    "emphasis": {
+                        "show": True,
+                        "textStyle": {
+                            "color": "#eee"
+                        }
+                    }},
+                "itemStyle": {
+                    "normal": {
+                        "areaColor": geo_normal_color,
+                        "borderColor": border_color
+                    },
+                    "emphasis": {
+                        "areaColor": geo_emphasis_color
+                    }}
+            })
+        self._option.get('legend')[0].get('data').append(name)
+        self._option.get('series').append({
+            "type": "lines",
+            "name": name,
+            "zlevel": self._zlevel,
+            "effect": {
+                "show": is_geo_effect_show,
+                "period": geo_effect_period,
+                "trailLength": geo_effect_traillength,
+                "color": geo_effect_color,
+                "symbol": geo_effect_symbol,
+                "symbolSize": geo_effect_symbolsize
+            },
+            "symbol": symbol or ["none", "arrow"],
+            "symbolSize": symbol_size,
+            "data": _data_lines,
+            "lineStyle": chart['line_style']
+        })
+        self._option.get('series').append({
+            "type": "scatter",
+            "name": name,
+            "zlevel": self._zlevel,
+            "coordinateSystem": 'geo',
+            "symbolSize": 10,
+            "data": _data_scatter,
+            "label": chart['label'],
+        })
+
+        name_in_pinyin = CITY_NAME_PINYIN_MAP.get(maptype, maptype)
+        self._js_dependencies.add(name_in_pinyin)
+        self._config_components(**kwargs)
+====pyecharts.charts.geolines.py(file) end====
+
 ====pyecharts.charts.graph.py(file) start====
 
-from pyecharts.base import Base
+from pyecharts.chart import Chart
 from pyecharts.option import get_all_options
 
 
-class Graph(Base):
+class Graph(Chart):
     def __init__(self, title="", subtitle="", **kwargs):
         super(Graph, self).__init__(title, subtitle, **kwargs)
 
@@ -9301,11 +9673,11 @@ class Graph(Base):
 
 ====pyecharts.charts.heatmap.py(file) start====
 
-from pyecharts.base import Base
+from pyecharts.chart import Chart
 from pyecharts.option import get_all_options
 
 
-class HeatMap(Base):
+class HeatMap(Chart):
     def __init__(self, title="", subtitle="", **kwargs):
         super(HeatMap, self).__init__(title, subtitle, **kwargs)
 
@@ -9347,11 +9719,11 @@ class HeatMap(Base):
 
 ====pyecharts.charts.kline.py(file) start====
 
-from pyecharts.base import Base
+from pyecharts.chart import Chart
 from pyecharts.option import get_all_options
 
 
-class Kline(Base):
+class Kline(Chart):
     def __init__(self, title="", subtitle="", **kwargs):
         super(Kline, self).__init__(title, subtitle, **kwargs)
 
@@ -9383,11 +9755,11 @@ class Kline(Base):
 
 ====pyecharts.charts.line.py(file) start====
 
-from pyecharts.base import Base
+from pyecharts.chart import Chart
 from pyecharts.option import get_all_options
 
 
-class Line(Base):
+class Line(Chart):
     def __init__(self, title="", subtitle="", **kwargs):
         super(Line, self).__init__(title, subtitle, **kwargs)
 
@@ -9432,11 +9804,11 @@ class Line(Base):
 
 ====pyecharts.charts.line3D.py(file) start====
 
-from pyecharts.base import Base
+from pyecharts.chart import Chart
 from pyecharts.option import get_all_options
 
 
-class Line3D(Base):
+class Line3D(Chart):
 
     def __init__(self, title="", subtitle="", **kwargs):
         super(Line3D, self).__init__(title, subtitle, **kwargs)
@@ -9473,10 +9845,10 @@ class Line3D(Base):
 
 ====pyecharts.charts.liquid.py(file) start====
 
-from pyecharts.base import Base
+from pyecharts.chart import Chart
 
 
-class Liquid(Base):
+class Liquid(Chart):
     def __init__(self, title="", subtitle="", **kwargs):
         super(Liquid, self).__init__(title, subtitle, **kwargs)
         self._js_dependencies.add('liquidfill')
@@ -9497,10 +9869,6 @@ class Liquid(Base):
         if liquid_color:
             _color = liquid_color
 
-        _shape = 'circle'
-        if shape in ('circle', 'rect', 'roundRect', 'triangle', 'diamond', 'pin', 'arrow'):
-            _shape = shape
-
         self._option.get('series').append({
             "type": "liquidFill",
             "name": name,
@@ -9509,7 +9877,7 @@ class Liquid(Base):
             "animationDuration": _animation_dur,
             "animationDurationUpdate": _animation_dur_update,
             "color": _color,
-            "shape": _shape,
+            "shape": shape,
             "outline": {
                 "show": is_liquid_outline_show
             }
@@ -9519,14 +9887,14 @@ class Liquid(Base):
 ====pyecharts.charts.map.py(file) start====
 import sys
 
-from pyecharts.base import Base
+from pyecharts.chart import Chart
 from pyecharts.option import get_all_options
 from pyecharts.constants import CITY_NAME_PINYIN_MAP
 
 PY2 = sys.version_info[0] == 2
 
 
-class Map(Base):
+class Map(Chart):
     def __init__(self, title="", subtitle="", **kwargs):
         super(Map, self).__init__(title, subtitle, **kwargs)
 
@@ -9534,8 +9902,8 @@ class Map(Base):
         self.__add(*args, **kwargs)
 
     def __add(self, name, attr, value,
+              maptype="china",
               is_roam=True,
-              maptype='china',
               is_map_symbol_show=True,
               **kwargs):
         assert len(attr) == len(value)
@@ -9563,10 +9931,10 @@ class Map(Base):
 
 ====pyecharts.charts.parallel.py(file) start====
 
-from pyecharts.base import Base
+from pyecharts.chart import Chart
 
 
-class Parallel(Base):
+class Parallel(Chart):
     def __init__(self, title="", subtitle="", **kwargs):
         super(Parallel, self).__init__(title, subtitle, **kwargs)
 
@@ -9601,11 +9969,11 @@ class Parallel(Base):
 
 ====pyecharts.charts.pie.py(file) start====
 
-from pyecharts.base import Base
+from pyecharts.chart import Chart
 from pyecharts.option import get_all_options
 
 
-class Pie(Base):
+class Pie(Chart):
     def __init__(self, title="", subtitle="", **kwargs):
         super(Pie, self).__init__(title, subtitle, **kwargs)
 
@@ -9662,11 +10030,11 @@ class Pie(Base):
 
 ====pyecharts.charts.polar.py(file) start====
 
-from pyecharts.base import Base
+from pyecharts.chart import Chart
 from pyecharts.option import get_all_options
 
 
-class Polar(Base):
+class Polar(Chart):
     def __init__(self, title="", subtitle="", **kwargs):
         super(Polar, self).__init__(title, subtitle, **kwargs)
 
@@ -9696,9 +10064,8 @@ class Polar(Base):
         if axis_range:
             if len(axis_range) == 2:
                 _amin, _amax = axis_range
-        _area_style = {
-            "normal": chart['area_style']
-        }
+
+        _area_style = {"normal": chart['area_style']}
         if kwargs.get('area_color', None) is None:
             _area_style = None
 
@@ -9789,11 +10156,11 @@ class Polar(Base):
 
 ====pyecharts.charts.radar.py(file) start====
 
-from pyecharts.base import Base
+from pyecharts.chart import Chart
 from pyecharts.option import get_all_options
 
 
-class Radar(Base):
+class Radar(Chart):
     def __init__(self, title="", subtitle="", **kwargs):
         super(Radar, self).__init__(title, subtitle, **kwargs)
 
@@ -9853,11 +10220,11 @@ class Radar(Base):
 
 ====pyecharts.charts.sankey.py(file) start====
 
-from pyecharts.base import Base
+from pyecharts.chart import Chart
 from pyecharts.option import get_all_options
 
 
-class Sankey(Base):
+class Sankey(Chart):
 
     def __init__(self, title="", subtitle="", **kwargs):
         super(Sankey, self).__init__(title, subtitle, **kwargs)
@@ -9888,11 +10255,11 @@ class Sankey(Base):
 
 ====pyecharts.charts.scatter.py(file) start====
 
-from pyecharts.base import Base
+from pyecharts.chart import Chart
 from pyecharts.option import get_all_options
 
 
-class Scatter(Base):
+class Scatter(Chart):
     def __init__(self, title="", subtitle="", **kwargs):
         super(Scatter, self).__init__(title, subtitle, **kwargs)
 
@@ -9928,16 +10295,15 @@ class Scatter(Base):
 
     def draw(self, path, color=None):
         raise Exception("Not implemented")
-
 ====pyecharts.charts.scatter.py(file) end====
 
 ====pyecharts.charts.scatter3D.py(file) start====
 
-from pyecharts.base import Base
+from pyecharts.chart import Chart
 from pyecharts.option import get_all_options
 
 
-class Scatter3D(Base):
+class Scatter3D(Chart):
 
     def __init__(self, title="", subtitle="", **kwargs):
         super(Scatter3D, self).__init__(title, subtitle, **kwargs)
@@ -9976,11 +10342,11 @@ class Scatter3D(Base):
 
 ====pyecharts.charts.themeriver.py(file) start====
 
-from pyecharts.base import Base
+from pyecharts.chart import Chart
 from pyecharts.option import get_all_options
 
 
-class ThemeRiver(Base):
+class ThemeRiver(Chart):
     def __init__(self, title="", subtitle="", **kwargs):
         super(ThemeRiver, self).__init__(title, subtitle, **kwargs)
 
@@ -10006,11 +10372,11 @@ class ThemeRiver(Base):
 
 ====pyecharts.charts.treemap.py(file) start====
 
-from pyecharts.base import Base
+from pyecharts.chart import Chart
 from pyecharts.option import get_all_options
 
 
-class TreeMap(Base):
+class TreeMap(Chart):
 
     def __init__(self, title="", subtitle="", **kwargs):
         super(TreeMap, self).__init__(title, subtitle, **kwargs)
@@ -10041,11 +10407,11 @@ class TreeMap(Base):
 
 ====pyecharts.charts.wordcloud.py(file) start====
 
-from pyecharts.base import Base
+from pyecharts.chart import Chart
 from pyecharts.option import gen_color
 
 
-class WordCloud(Base):
+class WordCloud(Chart):
     def __init__(self, title="", subtitle="", **kwargs):
         super(WordCloud, self).__init__(title, subtitle, **kwargs)
         self._js_dependencies.add('wordcloud')
@@ -10124,6 +10490,14 @@ request.send()
 
 PAGE_TITLE = "Echarts"
 
+SYMBOL = {
+    "plane": 'path://M1705.06,1318.313v-89.254l-319.9-221.799l0.073-208.'
+             '063c0.521-84.662-26.629-121.796-63.961-121.491c-37.332-0.'
+             '305-64.482,36.829-63.961,121.491l0.073,208.063l-319.9,221.'
+             '799v89.254l330.343-157.288l12.238,241.308l-134.449,92.931l0.'
+             '531,42.034l175.125-42.917l175.125,42.917l0.531-42.034l-134'
+             '.449-92.931l12.238-241.308L1705.06,1318.313z'
+}
 
 CITY_GEO_COORDS = {
     '阿城': [126.58, 45.32],
@@ -13845,17 +14219,21 @@ CITY_GEO_COORDS = {
 ====pyecharts.custom.py(module) end====
 
 ====pyecharts.custom.grid.py(file) start====
+import copy
 
 from pyecharts.option import grid
-from pyecharts import template
 from pyecharts.constants import PAGE_TITLE
+from pyecharts.base import Base
 
 
-class Grid(object):
-
-    def __init__(self, page_title=PAGE_TITLE):
-        self._chart = None
-        self._js_dependencies = set()
+class Grid(Base):
+    def __init__(self, page_title=PAGE_TITLE,
+                 width=800,
+                 height=400,
+                 jshost=None):
+        super(Grid, self).__init__(
+            width=width, height=height, jshost=jshost
+        )
         self._page_title = page_title
 
     def add(self, chart,
@@ -13865,94 +14243,81 @@ class Grid(object):
             grid_bottom=None,
             grid_left=None,
             grid_right=None):
-        if self._chart is None:
-            self._chart = chart
-            self._chart._option.update(grid=[])
-            self._js_dependencies = chart._js_dependencies
+        if not self._option:
+            self._option = copy.deepcopy(chart.options)
+            self._option.update(grid=[])
+            self._js_dependencies = chart.js_dependencies
 
             _grid = grid(
-                grid_width, grid_height, grid_top, grid_bottom, grid_left, grid_right)
+                grid_width, grid_height,
+                grid_top, grid_bottom, grid_left, grid_right)
             if _grid:
-                for _ in range(len(self._chart._option.get('series'))):
-                    self._chart._option.get('grid').append(_grid)
+                for _ in range(len(self._option.get('series'))):
+                    self._option.get('grid').append(_grid)
         else:
             _series = (
-                chart._option.get('series'),
-                chart._option.get('xAxis', None),
-                chart._option.get('yAxis', None),
-                chart._option.get('legend')[0],
-                chart._option.get('title')[0]
+                chart.options.get('series'),
+                chart.options.get('xAxis', None),
+                chart.options.get('yAxis', None),
+                chart.options.get('legend')[0],
+                chart.options.get('title')[0]
             )
-            _index, _index_once, _xaxis, _yaxis, _legend, _title = self.__custom(_series)
-            self._chart._option.get('legend').append(_legend)
-            self._chart._option.get('title').append(_title)
+            (_index, _index_once, _xaxis,
+             _yaxis, _legend, _title) = self.__custom(_series)
+            self._option.get('legend').append(_legend)
+            self._option.get('title').append(_title)
 
             if _xaxis and _yaxis is not None:
                 for _x in _xaxis:
                     _x.update(gridIndex=_index - 1)
-                    self._chart._option.get('xAxis').append(_x)
+                    self._option.get('xAxis').append(_x)
                 for _y in _yaxis:
                     _y.update(gridIndex=_index - 1)
-                    self._chart._option.get('yAxis').append(_y)
+                    self._option.get('yAxis').append(_y)
 
-                _flag = self._chart._option.get('series')[0].get('seriesId')
+                _flag = self._option.get('series')[0].get('seriesId')
                 _series_index = 0
-                for s in self._chart._option.get('series'):
+                for s in self._option.get('series'):
                     if _flag == s.get('seriesId'):
-                        s.update(xAxisIndex=_series_index, yAxisIndex=_series_index)
+                        s.update(xAxisIndex=_series_index,
+                                 yAxisIndex=_series_index)
                     else:
                         _series_index += 1
-                        s.update(xAxisIndex=_series_index, yAxisIndex=_series_index)
+                        s.update(xAxisIndex=_series_index,
+                                 yAxisIndex=_series_index)
                     _flag = s.get('seriesId')
 
             _grid = grid(
-                grid_width, grid_height, grid_top,grid_bottom, grid_left, grid_right)
+                grid_width, grid_height,
+                grid_top, grid_bottom, grid_left, grid_right)
             for _ in range(_index_once):
-                self._chart._option.get('grid').append(_grid)
-            self._js_dependencies = self._js_dependencies.union(chart._js_dependencies)
+                self._option.get('grid').append(_grid)
+            self._js_dependencies = self._js_dependencies.union(
+                chart.js_dependencies)
 
     def __custom(self, series):
         _series, _xaxis, _yaxis, _legend, _title = series
         for s in _series:
-            self._chart._option.get('series').append(s)
-        return len(self._chart._option.get('series')), len(_series), \
-               _xaxis, _yaxis, _legend, _title
-
-    def render(self, path="render.html"):
-        self._chart.render(path)
-
-    def render_embed(self):
-        return self._chart.render_embed()
-
-    def show_config(self):
-        self._chart.show_config()
-
-    @property
-    def chart(self):
-        return self._chart
-
-    @property
-    def options(self):
-        return self._chart._option
-
-    def _repr_html_(self):
-        return self._chart._repr_html_()
-
-    def get_js_dependencies(self):
-        return template.produce_html_script_list(self._js_dependencies)
+            self._option.get('series').append(s)
+        return len(self._option.get('series')), len(_series), \
+            _xaxis, _yaxis, _legend, _title
 ====pyecharts.custom.grid.py(file) end====
 
 ====pyecharts.custom.overlap.py(file) start====
 
-from pyecharts import template
+import copy
 from pyecharts.constants import PAGE_TITLE
+from pyecharts.base import Base
 
 
-class Overlap(object):
-
-    def __init__(self, page_title=PAGE_TITLE):
-        self._chart = None
-        self._js_dependencies = set()
+class Overlap(Base):
+    def __init__(self, page_title=PAGE_TITLE,
+                 width=800,
+                 height=400,
+                 jshost=None):
+        super(Overlap, self).__init__(
+            width=width, height=height, jshost=jshost
+        )
         self._page_title = page_title
 
     def add(self, chart,
@@ -13960,72 +14325,50 @@ class Overlap(object):
             yaxis_index=0,
             is_add_xaxis=False,
             is_add_yaxis=False):
-        if self._chart is None:
-            self._chart = chart
-            self._series_id = chart._option.get('series')[0].get('seriesId')
-            self._js_dependencies = chart._js_dependencies
+        if not self._option:
+            self._option = copy.deepcopy(chart.options)
+            self._series_id = self._option.get('series')[0].get('seriesId')
+            self._js_dependencies = chart.js_dependencies
         else:
             _series = (
-                chart._option.get('legend')[0].get('data'),
-                chart._option.get('series'),
-                chart._option.get('xAxis')[0],
-                chart._option.get('yAxis')[0],
+                chart.options.get('legend')[0].get('data'),
+                chart.options.get('series'),
+                chart.options.get('xAxis')[0],
+                chart.options.get('yAxis')[0],
                 is_add_xaxis,
                 is_add_yaxis,
                 xaxis_index,
                 yaxis_index
             )
             self.__custom(_series)
-            self._js_dependencies = self._js_dependencies.union(chart._js_dependencies)
-        self._option = self._chart._option
+            self._js_dependencies = self._js_dependencies.union(
+                chart.js_dependencies)
 
     def __custom(self, series):
         (_name, _series, _xaxis, _yaxis, is_add_xaxis, is_add_yaxis,
          _xaxis_index, _yaxis_index) = series
         for n in _name:
-            self._chart._option.get('legend')[0].get('data').append(n)
+            self._option.get('legend')[0].get('data').append(n)
         for s in _series:
             s.update(xAxisIndex=_xaxis_index, yAxisIndex=_yaxis_index,
                      seriesId=self._series_id)
-            self._chart._option.get('series').append(s)
+            self._option.get('series').append(s)
 
         if is_add_xaxis:
-            self._chart._option.get('xAxis').append(_xaxis)
+            self._option.get('xAxis').append(_xaxis)
         if is_add_yaxis:
-            self._chart._option.get('yAxis').append(_yaxis)
-
-    def render(self, path="render.html"):
-        self._chart.render(path)
-
-    def render_embed(self):
-        return self._chart.render_embed()
-
-    def show_config(self):
-        self._chart.show_config()
-
-    @property
-    def chart(self):
-        return self._chart
-
-    @property
-    def options(self):
-        return self._chart._option
-
-    def _repr_html_(self):
-        return self._chart._repr_html_()
-
-    def get_js_dependencies(self):
-        return template.produce_html_script_list(self._js_dependencies)
+            self._option.get('yAxis').append(_yaxis)
 ====pyecharts.custom.overlap.py(file) end====
 
 ====pyecharts.custom.page.py(file) start====
+
 from browser import doc, load
+import pyecharts.template as template
 import pyecharts.constants as constants
-from pyecharts.template import (
-    produce_html_script_list)
 
 
 class Page(object):
+
     def __init__(self, jshost=None, page_title=constants.PAGE_TITLE):
         self.__charts = []
         self._page_title = page_title
@@ -14050,7 +14393,7 @@ class Page(object):
 
     def get_js_dependencies(self):
         unordered_js_dependencies = self._merge_dependencies()
-        return produce_html_script_list(unordered_js_dependencies)
+        return template.produce_html_script_list(unordered_js_dependencies)
 
     def _merge_dependencies(self):
         dependencies = set()
@@ -14060,18 +14403,27 @@ class Page(object):
             dependencies.remove('echarts')
             dependencies = ['echarts'] + list(dependencies)
         return dependencies
+
+    @property
+    def charts(self):
+        return self.__charts
+
+    @property
+    def js_dependencies(self):
+        return self._merge_dependencies()
 ====pyecharts.custom.page.py(file) end====
 
 ====pyecharts.custom.timeline.py(file) start====
 
-import pprint
-from pyecharts import template
 from pyecharts.constants import PAGE_TITLE
+from pyecharts.base import Base
 
 
-class Timeline(object):
-
+class Timeline(Base):
     def __init__(self, page_title=PAGE_TITLE,
+                 jshost=None,
+                 width=800,
+                 height=400,
                  is_auto_play=False,
                  is_loop_play=True,
                  is_rewind_play=False,
@@ -14084,11 +14436,12 @@ class Timeline(object):
                  timeline_top="auto",
                  timeline_bottom="atuo"):
 
-        self._chart = None
+        super(Timeline, self).__init__(
+            width=width, height=height, jshost=jshost
+        )
         self._page_title = page_title
-        self._js_dependencies = set()
         self._time_points = []
-        self._timeline_options = {
+        self._option = {
             "baseOption": {
                 "timeline": {
                     "axisType": "category",
@@ -14103,96 +14456,38 @@ class Timeline(object):
                     "right": timeline_right,
                     "top": timeline_top,
                     "bottom": timeline_bottom
-            }},
+                }
+            },
             "options": []
         }
 
     def add(self, chart, time_point):
-        self._chart = chart
-        self._js_dependencies = self._js_dependencies.union(chart._js_dependencies)
+        self._js_dependencies = self._js_dependencies.union(
+            chart.get_js_dependencies())
         self.__check_components(chart)
         self._time_points.append(time_point)
-        self._timeline_options.get('baseOption').update(
-            legend=chart._option.get('legend'),
-            backgroundColor=chart._option.get('backgroundColor')
+        self._option.get('baseOption').update(
+            legend=chart.options.get('legend'),
+            backgroundColor=chart.options.get('backgroundColor')
         )
-        self._timeline_options.get('baseOption').get('timeline').update(
+        self._option.get('baseOption').get('timeline').update(
             data=self._time_points
         )
-        self._timeline_options.get('options').append({
-            "series": chart._option.get('series'),
-            "title": chart._option.get('title')
+        self._option.get('options').append({
+            "series": chart.options.get('series'),
+            "title": chart.options.get('title')
         })
 
-    def show_config(self):
-        pprint.pprint(self._timeline_options)
-
-    def render(self, path="render.html"):
-        self._chart._option = self._timeline_options
-        self._chart.render(path)
-
-    def render_embed(self):
-        self._chart._option = self._timeline_options
-        return self._chart.render_embed()
-
-    @property
-    def chart(self):
-        return self._chart
-
-    @property
-    def options(self):
-        return self._timeline_options
-
-    def _repr_html_(self):
-        return self._chart._repr_html_()
-
-    def get_js_dependencies(self):
-        return template.produce_html_script_list(self._js_dependencies)
-
     def __check_components(self, chart):
-        _grid = chart._option.get('grid', None)
-        if _grid is not None:
-            self._timeline_options.get('baseOption').update(grid=_grid)
+        _compoents = [
+            'gird', 'xAxis', 'yAxis', 'polar', 'radiusAxis', 'geo'
+            'angleAxis', 'radar', 'visualMap', 'dataZoom', 'parallelAxis'
+        ]
 
-        _xaxis = chart._option.get('xAxis', None)
-        if _xaxis is not None:
-            self._timeline_options.get('baseOption').update(xAxis=_xaxis)
-
-        _yaxis = chart._option.get('yAxis', None)
-        if _yaxis is not None:
-            self._timeline_options.get('baseOption').update(yAxis=_yaxis)
-
-        _polar = chart._option.get('polar', None)
-        if _polar is not None:
-            self._timeline_options.get('baseOption').update(polar=_polar)
-
-        _radiusAxis = chart._option.get('radiusAxis', None)
-        if _radiusAxis is not None:
-            self._timeline_options.get('baseOption').update(radiusAxis=_radiusAxis)
-
-        _angleAxis = chart._option.get('angleAxis', None)
-        if _angleAxis is not None:
-            self._timeline_options.get('baseOption').update(angleAxis=_angleAxis)
-
-        _radar = chart._option.get('radar', None)
-        if _radar is not None:
-            self._timeline_options.get('baseOption').update(radar=_radar)
-
-        _visualMap = chart._option.get('visualMap', None)
-        if _visualMap is not None:
-            self._timeline_options.get('baseOption').update(visualMap=_visualMap)
-
-        _geo = chart._option.get('geo', None)
-        if _geo is not None:
-            self._timeline_options.get('baseOption').update(geo=_geo)
-
-        _datazoom = chart._option.get('dataZoom', None)
-        if _geo is not None:
-            self._timeline_options.get('baseOption').update(dataZoom=_datazoom)
-
-        _parallelAxis = chart._option.get('parallelAxis', None)
-        if _parallelAxis is not None:
-            self._timeline_options.get('baseOption').update(parallelAxis=_parallelAxis)
+        for component in _compoents:
+            _c = chart.options.get(component, None)
+            if _c is not None:
+                self._option.get('baseOption').update({component: _c})
 ====pyecharts.custom.timeline.py(file) end====
 
 ====pyecharts.option.py(file) start====
@@ -14803,6 +15098,33 @@ def get_all_options(**kwargs):
         _funcs[f.__name__] = f(**kwargs)
     return _funcs
 ====pyecharts.option.py(file) end====
+
+====pyecharts.style.py(file) start====
+
+from pyecharts.chart import Chart
+
+
+class Style(Chart):
+    def __init__(self, title="", subtitle="", **kwargs):
+        super(Style, self).__init__(title, subtitle, **kwargs)
+        self._add_style = None
+        self.init_style = {}
+        for key in kwargs:
+            value = kwargs.get(key)
+            if value is not None:
+                self.init_style.update({key: value})
+
+    def add(self, **kwargs):
+        self._add_style = {}
+        return self.__add(**kwargs)
+
+    def __add(self, **kwargs):
+        for key in kwargs:
+            value = kwargs.get(key)
+            if value is not None:
+                self._add_style.update({key: value})
+        return self._add_style
+====pyecharts.style.py(file) end====
 
 ====pyecharts.template.py(file) start====
 from __future__ import unicode_literals
@@ -18073,6 +18395,83 @@ def format_exception(_type,value,tb,limit=None ,chain=True ):
 def extract_tb(tb,limit=None ):
  return tb====traceback.py(file) end====
 
+====types.py(file) start====
+''
+import sys
+def _f():pass
+FunctionType=type(_f)
+LambdaType=type(lambda :None )
+CodeType=type(_f. __code__)
+MappingProxyType=type(type. __dict__)
+SimpleNamespace=type(sys. implementation)
+
+def _g():
+ yield 1
+GeneratorType=type(_g())
+
+class _C:
+ def _m(self):pass
+MethodType=type(_C(). _m)
+
+BuiltinFunctionType=type(len)
+BuiltinMethodType=type([]. append)
+
+ModuleType=type(sys)
+
+try :
+ raise TypeError
+except TypeError:
+ tb=sys. exc_info()[2]
+ TracebackType=type(tb)
+ FrameType=type(tb. tb_frame)
+ tb=None ;del tb
+GetSetDescriptorType=type(FunctionType. __code__)
+MemberDescriptorType=type(FunctionType. __globals__)
+
+del sys,_f,_g,_C,
+def new_class(name,bases=(),kwds=None ,exec_body=None ):
+ ''
+ meta,ns,kwds=prepare_class(name,bases,kwds)
+ if exec_body is not None :
+  exec_body(ns)
+ return meta(name,bases,ns,**kwds)
+def prepare_class(name,bases=(),kwds=None ):
+ ''
+ if kwds is None :
+  kwds={}
+ else :
+  kwds=dict(kwds)
+ if'metaclass'in kwds:
+  meta=kwds. pop('metaclass')
+ else :
+  if bases:
+   meta=type(bases[0])
+  else :
+   meta=type
+ if isinstance(meta,type):
+  meta=_calculate_meta(meta,bases)
+ if hasattr(meta,'__prepare__'):
+  ns=meta. __prepare__(name,bases,**kwds)
+ else :
+  ns={}
+ return meta,ns,kwds
+def _calculate_meta(meta,bases):
+ ''
+ winner=meta
+ for base in bases:
+  base_meta=type(base)
+  if issubclass(winner,base_meta):
+   continue
+  if issubclass(base_meta,winner):
+   winner=base_meta
+   continue
+  raise TypeError("metaclass conflict: "
+  "the metaclass of a derived class "
+  "must be a (non-strict) subclass "
+  "of the metaclasses of all its bases")
+ return winner
+====types.py(file) end====
+
 ====uuid.py(file) start====
 ''
 __author__='Ka-Ping Yee <ping@zesty.ca>'
@@ -18429,4 +18828,273 @@ NAMESPACE_URL=UUID('6ba7b811-9dad-11d1-80b4-00c04fd430c8')
 NAMESPACE_OID=UUID('6ba7b812-9dad-11d1-80b4-00c04fd430c8')
 NAMESPACE_X500=UUID('6ba7b814-9dad-11d1-80b4-00c04fd430c8')
 ====uuid.py(file) end====
+
+====weakref.py(file) start====
+''
+from _weakref import (
+getweakrefcount,
+getweakrefs,
+ref,
+proxy,
+CallableProxyType,
+ProxyType,
+ReferenceType)
+
+from _weakrefset import WeakSet,_IterationGuard
+
+import collections
+
+ProxyTypes=(ProxyType,CallableProxyType)
+
+__all__=["ref","proxy","getweakrefcount","getweakrefs",
+"WeakKeyDictionary","ReferenceType","ProxyType",
+"CallableProxyType","ProxyTypes","WeakValueDictionary",
+"WeakSet"]
+class WeakValueDictionary(collections. MutableMapping):
+ ''
+ def __init__(self,*args,**kw):
+  def remove(wr,selfref=ref(self)):
+   self=selfref()
+   if self is not None :
+    if self. _iterating:
+     self. _pending_removals. append(wr. key)
+    else :
+     del self. data[wr. key]
+  self. _remove=remove
+  self. _pending_removals=[]
+  self. _iterating=set()
+  self. data=d={}
+  self. update(*args,**kw)
+ def _commit_removals(self):
+  l=self. _pending_removals
+  d=self. data
+  while l:
+   del d[l. pop()]
+ def __getitem__(self,key):
+  o=self. data[key]()
+  if o is None :
+   raise KeyError(key)
+  else :
+   return o
+ def __delitem__(self,key):
+  if self. _pending_removals:
+   self. _commit_removals()
+  del self. data[key]
+ def __len__(self):
+  return len(self. data)-len(self. _pending_removals)
+ def __contains__(self,key):
+  try :
+   o=self. data[key]()
+  except KeyError:
+   return False
+  return o is not None
+ def __repr__(self):
+  return"<WeakValueDictionary at %s>"%id(self)
+ def __setitem__(self,key,value):
+  if self. _pending_removals:
+   self. _commit_removals()
+  self. data[key]=KeyedRef(value,self. _remove,key)
+ def copy(self):
+  new=WeakValueDictionary()
+  for key,wr in self. data. items():
+   o=wr()
+   if o is not None :
+    new[key]=o
+  return new
+ __copy__=copy
+ def __deepcopy__(self,memo):
+  from copy import deepcopy
+  new=self. __class__()
+  for key,wr in self. data. items():
+   o=wr()
+   if o is not None :
+    new[deepcopy(key,memo)]=o
+  return new
+ def get(self,key,default=None ):
+  try :
+   wr=self. data[key]
+  except KeyError:
+   return default
+  else :
+   o=wr()
+   if o is None :
+    return default
+   else :
+    return o
+ def items(self):
+  with _IterationGuard(self):
+   for k,wr in self. data. items():
+    v=wr()
+    if v is not None :
+     yield k,v
+ def keys(self):
+  with _IterationGuard(self):
+   for k,wr in self. data. items():
+    if wr()is not None :
+     yield k
+ __iter__=keys
+ def itervaluerefs(self):
+  ''
+  with _IterationGuard(self):
+   for wr in self. data. values():
+    yield wr
+ def values(self):
+  with _IterationGuard(self):
+   for wr in self. data. values():
+    obj=wr()
+    if obj is not None :
+     yield obj
+ def popitem(self):
+  if self. _pending_removals:
+   self. _commit_removals()
+  while True :
+   key,wr=self. data. popitem()
+   o=wr()
+   if o is not None :
+    return key,o
+ def pop(self,key,*args):
+  if self. _pending_removals:
+   self. _commit_removals()
+  try :
+   o=self. data. pop(key)()
+  except KeyError:
+   if args:
+    return args[0]
+   raise
+  if o is None :
+   raise KeyError(key)
+  else :
+   return o
+ def setdefault(self,key,default=None ):
+  try :
+   wr=self. data[key]
+  except KeyError:
+   if self. _pending_removals:
+    self. _commit_removals()
+   self. data[key]=KeyedRef(default,self. _remove,key)
+   return default
+  else :
+   return wr()
+ def update(self,dict=None ,**kwargs):
+  if self. _pending_removals:
+   self. _commit_removals()
+  d=self. data
+  if dict is not None :
+   if not hasattr(dict,"items"):
+    dict=type({})(dict)
+   for key,o in dict. items():
+    d[key]=KeyedRef(o,self. _remove,key)
+  if len(kwargs):
+   self. update(kwargs)
+ def valuerefs(self):
+  ''
+  return list(self. data. values())
+class KeyedRef(ref):
+ ''
+ __slots__="key",
+ def __new__(type,ob,callback,key):
+  self=ref. __new__(type,ob,callback)
+  self. key=key
+  return self
+ def __init__(self,ob,callback,key):
+  super(). __init__(ob,callback)
+class WeakKeyDictionary(collections. MutableMapping):
+ ''
+ def __init__(self,dict=None ):
+  self. data={}
+  def remove(k,selfref=ref(self)):
+   self=selfref()
+   if self is not None :
+    if self. _iterating:
+     self. _pending_removals. append(k)
+    else :
+     del self. data[k]
+  self. _remove=remove
+  self. _pending_removals=[]
+  self. _iterating=set()
+  if dict is not None :
+   self. update(dict)
+ def _commit_removals(self):
+  l=self. _pending_removals
+  d=self. data
+  while l:
+   try :
+    del d[l. pop()]
+   except KeyError:
+    pass
+ def __delitem__(self,key):
+  del self. data[ref(key)]
+ def __getitem__(self,key):
+  return self. data[ref(key)]
+ def __len__(self):
+  return len(self. data)-len(self. _pending_removals)
+ def __repr__(self):
+  return"<WeakKeyDictionary at %s>"%id(self)
+ def __setitem__(self,key,value):
+  self. data[ref(key,self. _remove)]=value
+ def copy(self):
+  new=WeakKeyDictionary()
+  for key,value in self. data. items():
+   o=key()
+   if o is not None :
+    new[o]=value
+  return new
+ __copy__=copy
+ def __deepcopy__(self,memo):
+  from copy import deepcopy
+  new=self. __class__()
+  for key,value in self. data. items():
+   o=key()
+   if o is not None :
+    new[o]=deepcopy(value,memo)
+  return new
+ def get(self,key,default=None ):
+  return self. data. get(ref(key),default)
+ def __contains__(self,key):
+  try :
+   wr=ref(key)
+  except TypeError:
+   return False
+  return wr in self. data
+ def items(self):
+  with _IterationGuard(self):
+   for wr,value in self. data. items():
+    key=wr()
+    if key is not None :
+     yield key,value
+ def keys(self):
+  with _IterationGuard(self):
+   for wr in self. data:
+    obj=wr()
+    if obj is not None :
+     yield obj
+ __iter__=keys
+ def values(self):
+  with _IterationGuard(self):
+   for wr,value in self. data. items():
+    if wr()is not None :
+     yield value
+ def keyrefs(self):
+  ''
+  return list(self. data)
+ def popitem(self):
+  while True :
+   key,value=self. data. popitem()
+   o=key()
+   if o is not None :
+    return o,value
+ def pop(self,key,*args):
+  return self. data. pop(ref(key),*args)
+ def setdefault(self,key,default=None ):
+  return self. data. setdefault(ref(key,self. _remove),default)
+ def update(self,dict=None ,**kwargs):
+  d=self. data
+  if dict is not None :
+   if not hasattr(dict,"items"):
+    dict=type({})(dict)
+   for key,value in dict. items():
+    d[ref(key,self. _remove)]=value
+  if len(kwargs):
+   self. update(kwargs)
+====weakref.py(file) end====
 

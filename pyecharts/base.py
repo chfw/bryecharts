@@ -1,6 +1,5 @@
 # coding=utf-8
 
-import uuid
 import json
 import datetime
 from browser import window, load, doc
@@ -32,7 +31,7 @@ class Base(object):
         """
         self._option = {}
         self._js_dependencies = set()
-        self._chart_id = uuid.uuid4().hex
+        self._chart_id = ""
         self.width, self.height = width, height
         self._page_title = page_title
         self._jshost = jshost if jshost else constants.CONFIGURATION['HOST']
@@ -76,36 +75,28 @@ class Base(object):
 
     def draw(self):
         div = doc.createElement('div')
-        div.style.width = self._width
-        div.style.height = self._height
+        div.style.width = self.width
+        div.style.height = self.height
         doc['me'].appendChild(div)
         myechart = window.echarts.init(div)
         myechart.setOption(self.options)
 
 
-class UnknownTypeEncoder(json.JSONEncoder):
+def handle(obj):
     """
-    `UnknownTypeEncoder`类用于处理数据的编码，使其能够被正常的序列化
+
+    :param obj:
+    :return:
     """
-    def default(self, obj):
-        if isinstance(obj, (datetime.datetime, datetime.date)):
-            return obj.isoformat()
-        else:
-            try:
-                return obj.astype(float).tolist()
-            except:
-                try:
-                    return obj.astype(str).tolist()
-                except:
-                    return json.JSONEncoder.default(self, obj)
+    if isinstance(obj, (datetime.datetime, datetime.date)):
+        return obj.isoformat()
 
 
 def json_dumps(data, indent=0):
-    """ json 序列化编码处理
+    """
 
-    :param data: 字典数据
-    :param indent: 缩进量
+    :param data:
+    :param indent:
     :return:
     """
-    return json.dumps(data, indent=indent,
-                      cls=UnknownTypeEncoder)
+    return json.dumps(data, indent=indent, default=handle)

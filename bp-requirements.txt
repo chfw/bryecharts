@@ -1,3 +1,6 @@
+weakref
+types
+copy
 reprlib
 _weakrefset
 builtins
