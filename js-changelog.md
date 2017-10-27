@@ -1,5 +1,12 @@
 # pyecharts.js change log
 
+## 1.3.27 - 28.10.2018
+
+### Updated
+
+1. Take pyecharts 0.2.7 as base line
+2. More docstrings and useless newlines were dumped. Lose some "weight".
+
 ## 1.2.26 - 26.10.2017
 
 ### Added
