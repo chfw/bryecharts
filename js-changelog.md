@@ -1,6 +1,12 @@
 # pyecharts.js change log
 
-## 1.3.27 - 28.10.2018
+## 1.4.27 - 29.10.2017
+
+### Updated
+
+1. Adding `Base.cast` function back
+
+## 1.3.27 - 28.10.2017
 
 ### Updated
 

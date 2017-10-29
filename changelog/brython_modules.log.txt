@@ -8816,6 +8816,28 @@ class Base(object):
         myechart = window.echarts.init(div)
         myechart.setOption(self.options)
 
+    @staticmethod
+    def cast(seq):
+        k_lst, v_lst = [], []
+        if isinstance(seq, list):
+            for s in seq:
+                try:
+                    if isinstance(s, tuple):
+                        _attr, _value = s
+                        k_lst.append(_attr)
+                        v_lst.append(_value)
+                    elif isinstance(s, dict):
+                        for k, v in s.items():
+                            k_lst.append(k)
+                            v_lst.append(v)
+                except:
+                    raise
+        elif isinstance(seq, dict):
+            for k, v in seq.items():
+                k_lst.append(k)
+                v_lst.append(v)
+        return k_lst, v_lst
+
 
 def handle(obj):
     if isinstance(obj, (datetime.datetime, datetime.date)):
