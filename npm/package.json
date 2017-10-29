@@ -1,6 +1,6 @@
 {
   "name": "pyecharts.js",
-  "version": "1.3.27",
+  "version": "1.4.27",
   "description": "Draw echarts using python language in modern browsers",
   "main": "pyecharts.js",
   "scripts": {
